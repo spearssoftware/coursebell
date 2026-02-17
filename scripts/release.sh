@@ -24,10 +24,7 @@ esac
 
 NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
 
-CURRENT_BUILD=$(node -p "require('./app.json').expo.ios.buildNumber")
-NEW_BUILD=$((CURRENT_BUILD + 1))
-
-echo "Bumping: $CURRENT_VERSION → $NEW_VERSION (build $CURRENT_BUILD → $NEW_BUILD)"
+echo "Bumping: $CURRENT_VERSION → $NEW_VERSION"
 
 node -e "
 const fs = require('fs');
@@ -40,12 +37,12 @@ node -e "
 const fs = require('fs');
 const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
 app.expo.version = '${NEW_VERSION}';
-app.expo.ios.buildNumber = '${NEW_BUILD}';
+app.expo.ios.buildNumber = '${NEW_VERSION}';
 fs.writeFileSync('app.json', JSON.stringify(app, null, 2) + '\n');
 "
 
 git add package.json app.json
-git commit -m "release: v${NEW_VERSION} (build ${NEW_BUILD})"
+git commit -m "release: v${NEW_VERSION}"
 git tag "app-v${NEW_VERSION}"
 
 echo ""
