@@ -1,4 +1,4 @@
-name: Release CourseBell
+name: Release
 
 on:
   workflow_dispatch:
