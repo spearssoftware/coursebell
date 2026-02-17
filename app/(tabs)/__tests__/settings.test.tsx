@@ -10,7 +10,7 @@ import SettingsScreen from '../settings';
 
 afterEach(() => {
   useSettingsStore.setState({
-    selectedBellSound: 'classic',
+    selectedBellSound: 'school-bell',
     warningMinutes: 2,
     notificationsEnabled: true,
     isLoaded: true,
@@ -36,19 +36,22 @@ describe('SettingsScreen', () => {
   });
 
   it('renders all bell sound options', () => {
-    useSettingsStore.setState({ selectedBellSound: 'classic', isLoaded: true });
+    useSettingsStore.setState({ selectedBellSound: 'school-bell', isLoaded: true });
 
     render(<SettingsScreen />);
 
-    expect(screen.getByText('Classic Bell')).toBeTruthy();
-    expect(screen.getByText('Single Chime')).toBeTruthy();
-    expect(screen.getByText('Double Tone')).toBeTruthy();
-    expect(screen.getByText('Buzzer')).toBeTruthy();
-    expect(screen.getByText('Gentle Melody')).toBeTruthy();
+    expect(screen.getByText('School Bell')).toBeTruthy();
+    expect(screen.getByText('School Bell 2')).toBeTruthy();
+    expect(screen.getByText('Old School Bell')).toBeTruthy();
+    expect(screen.getByText('Bike Bell')).toBeTruthy();
+    expect(screen.getByText('Ping')).toBeTruthy();
+    expect(screen.getByText('Light Alert')).toBeTruthy();
+    expect(screen.getByText('Quiet Alert')).toBeTruthy();
+    expect(screen.getByText('Up and Down')).toBeTruthy();
   });
 
   it('shows checkmark on selected bell sound', () => {
-    useSettingsStore.setState({ selectedBellSound: 'chime', isLoaded: true });
+    useSettingsStore.setState({ selectedBellSound: 'ping', isLoaded: true });
 
     render(<SettingsScreen />);
 
