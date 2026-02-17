@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "ClassHop",
+    "slug": "classhop-app",
+    "version": "1.0.0",
+    "scheme": "classhop",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F766E"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.classhop",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0F766E"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "app.classhop"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow ClassHop to access your camera to scan QR codes."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png"
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ]
+  }
+}
