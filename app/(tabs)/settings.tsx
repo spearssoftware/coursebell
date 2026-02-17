@@ -1,11 +1,11 @@
 import { useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { useSettingsStore } from '../../src/store/settings-store';
 import { requestNotificationPermissions } from '../../src/lib/bell-engine';
 import { colors, spacing, borderRadius, fontSize } from '../../src/theme';
-import type { BellSound } from '../../src/types';
+import type { BellSound, BellSounds } from '../../src/types';
 
 const SOUND_ASSETS: Record<BellSound, ReturnType<typeof require>> = {
   'school-bell': require('../../assets/sounds/school-bell.wav'),
@@ -18,20 +18,53 @@ const SOUND_ASSETS: Record<BellSound, ReturnType<typeof require>> = {
   'up-and-down': require('../../assets/sounds/up-and-down.wav'),
 };
 
-const BELL_SOUNDS: Array<{ id: BellSound; label: string; icon: string }> = [
-  { id: 'school-bell', label: 'School Bell', icon: 'notifications' },
-  { id: 'school-bell2', label: 'School Bell 2', icon: 'notifications-outline' },
-  { id: 'old-school-bell', label: 'Old School Bell', icon: 'alarm' },
-  { id: 'bike-bell', label: 'Bike Bell', icon: 'bicycle' },
-  { id: 'ping', label: 'Ping', icon: 'radio-button-on' },
-  { id: 'light-alert', label: 'Light Alert', icon: 'musical-note' },
-  { id: 'quiet-alert', label: 'Quiet Alert', icon: 'volume-low' },
-  { id: 'up-and-down', label: 'Up and Down', icon: 'musical-notes' },
+const BELL_SOUNDS: Array<{ id: BellSound; label: string }> = [
+  { id: 'school-bell', label: 'School Bell' },
+  { id: 'school-bell2', label: 'School Bell 2' },
+  { id: 'old-school-bell', label: 'Old School Bell' },
+  { id: 'bike-bell', label: 'Bike Bell' },
+  { id: 'ping', label: 'Ping' },
+  { id: 'light-alert', label: 'Light Alert' },
+  { id: 'quiet-alert', label: 'Quiet Alert' },
+  { id: 'up-and-down', label: 'Up and Down' },
 ];
+
+function SoundPicker({
+  selected,
+  onSelect,
+}: {
+  selected: BellSound;
+  onSelect: (id: BellSound) => void;
+}) {
+  return (
+    <View style={styles.card}>
+      {BELL_SOUNDS.map((sound, index) => (
+        <TouchableOpacity
+          key={sound.id}
+          style={[styles.soundRow, index < BELL_SOUNDS.length - 1 && styles.soundRowBorder]}
+          onPress={() => onSelect(sound.id)}
+          activeOpacity={0.6}
+        >
+          <Text
+            style={[
+              styles.soundLabel,
+              selected === sound.id && styles.selectedSound,
+            ]}
+          >
+            {sound.label}
+          </Text>
+          {selected === sound.id && (
+            <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+          )}
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
 
 export default function SettingsScreen() {
   const {
-    selectedBellSound,
+    bellSounds,
     warningMinutes,
     notificationsEnabled,
     setBellSound,
@@ -51,8 +84,8 @@ export default function SettingsScreen() {
     await sound.playAsync();
   }, []);
 
-  const handleSelectSound = useCallback(async (id: BellSound) => {
-    setBellSound(id);
+  const handleSelectSound = useCallback((bellType: keyof BellSounds, id: BellSound) => {
+    setBellSound(bellType, id);
     previewSound(id);
   }, [setBellSound, previewSound]);
 
@@ -71,7 +104,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Notifications</Text>
         <View style={styles.card}>
@@ -125,38 +158,29 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Bell Sound</Text>
-        <View style={styles.card}>
-          {BELL_SOUNDS.map((sound, index) => (
-            <TouchableOpacity
-              key={sound.id}
-              style={[styles.soundRow, index < BELL_SOUNDS.length - 1 && styles.soundRowBorder]}
-              onPress={() => handleSelectSound(sound.id)}
-              activeOpacity={0.6}
-            >
-              <View style={styles.rowContent}>
-                <Ionicons
-                  name={sound.icon as keyof typeof Ionicons.glyphMap}
-                  size={20}
-                  color={selectedBellSound === sound.id ? colors.primary : colors.textSecondary}
-                />
-                <Text
-                  style={[
-                    styles.soundLabel,
-                    selectedBellSound === sound.id && styles.selectedSound,
-                  ]}
-                >
-                  {sound.label}
-                </Text>
-              </View>
-              {selectedBellSound === sound.id && (
-                <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Text style={styles.sectionTitle}>Period Start Sound</Text>
+        <SoundPicker
+          selected={bellSounds.start}
+          onSelect={(id) => handleSelectSound('start', id)}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Warning Sound</Text>
+        <SoundPicker
+          selected={bellSounds.warning}
+          onSelect={(id) => handleSelectSound('warning', id)}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Period End Sound</Text>
+        <SoundPicker
+          selected={bellSounds.end}
+          onSelect={(id) => handleSelectSound('end', id)}
+        />
         <Text style={styles.hint}>
-          Tap to preview. Selected sound will play when bell notifications fire.
+          Tap any sound to preview it.
         </Text>
       </View>
 
@@ -169,7 +193,7 @@ export default function SettingsScreen() {
           </View>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -177,7 +201,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  content: {
     padding: spacing.md,
+    paddingBottom: spacing.xl * 2,
   },
   section: {
     marginBottom: spacing.lg,

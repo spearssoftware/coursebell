@@ -16,8 +16,14 @@ export interface DaySchedule {
 
 export type BellSound = 'school-bell' | 'school-bell2' | 'old-school-bell' | 'bike-bell' | 'ping' | 'light-alert' | 'quiet-alert' | 'up-and-down';
 
+export interface BellSounds {
+  start: BellSound;
+  warning: BellSound;
+  end: BellSound;
+}
+
 export interface UserSettings {
-  selectedBellSound: BellSound;
+  bellSounds: BellSounds;
   warningMinutes: number;
   notificationsEnabled: boolean;
 }

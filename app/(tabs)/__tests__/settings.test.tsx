@@ -8,9 +8,15 @@ jest.mock('../../../src/lib/bell-engine', () => ({
 
 import SettingsScreen from '../settings';
 
+const defaultBellSounds = {
+  start: 'school-bell' as const,
+  warning: 'quiet-alert' as const,
+  end: 'school-bell' as const,
+};
+
 afterEach(() => {
   useSettingsStore.setState({
-    selectedBellSound: 'school-bell',
+    bellSounds: defaultBellSounds,
     warningMinutes: 2,
     notificationsEnabled: true,
     isLoaded: true,
@@ -35,28 +41,35 @@ describe('SettingsScreen', () => {
     expect(screen.getByText('2')).toBeTruthy();
   });
 
-  it('renders all bell sound options', () => {
-    useSettingsStore.setState({ selectedBellSound: 'school-bell', isLoaded: true });
+  it('renders all three sound picker sections', () => {
+    useSettingsStore.setState({ bellSounds: defaultBellSounds, isLoaded: true });
 
     render(<SettingsScreen />);
 
-    expect(screen.getByText('School Bell')).toBeTruthy();
-    expect(screen.getByText('School Bell 2')).toBeTruthy();
-    expect(screen.getByText('Old School Bell')).toBeTruthy();
-    expect(screen.getByText('Bike Bell')).toBeTruthy();
-    expect(screen.getByText('Ping')).toBeTruthy();
-    expect(screen.getByText('Light Alert')).toBeTruthy();
-    expect(screen.getByText('Quiet Alert')).toBeTruthy();
-    expect(screen.getByText('Up and Down')).toBeTruthy();
+    expect(screen.getByText('Period Start Sound')).toBeTruthy();
+    expect(screen.getByText('Warning Sound')).toBeTruthy();
+    expect(screen.getByText('Period End Sound')).toBeTruthy();
   });
 
-  it('shows checkmark on selected bell sound', () => {
-    useSettingsStore.setState({ selectedBellSound: 'ping', isLoaded: true });
+  it('renders sound options in each picker', () => {
+    useSettingsStore.setState({ bellSounds: defaultBellSounds, isLoaded: true });
+
+    render(<SettingsScreen />);
+
+    const schoolBells = screen.getAllByText('School Bell');
+    expect(schoolBells.length).toBe(3);
+  });
+
+  it('shows checkmarks on selected bell sounds', () => {
+    useSettingsStore.setState({
+      bellSounds: { start: 'ping', warning: 'ping', end: 'ping' },
+      isLoaded: true,
+    });
 
     render(<SettingsScreen />);
 
     const checkmarks = screen.getAllByText('checkmark-circle');
-    expect(checkmarks.length).toBe(1);
+    expect(checkmarks.length).toBe(3);
   });
 
   it('shows app version', () => {

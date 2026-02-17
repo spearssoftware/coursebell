@@ -35,7 +35,7 @@ function getNextBellTime(periods: Period[], now: string): { period: Period; time
 export default function TodayScreen() {
   const { days, isLoaded } = useScheduleStore();
   const warningMinutes = useSettingsStore((s) => s.warningMinutes);
-  const selectedBellSound = useSettingsStore((s) => s.selectedBellSound);
+  const bellSounds = useSettingsStore((s) => s.bellSounds);
   const mutedDate = useSettingsStore((s) => s.mutedDate);
   const isMutedToday = useSettingsStore((s) => s.isMutedToday);
   const toggleMuteToday = useSettingsStore((s) => s.toggleMuteToday);
@@ -50,9 +50,9 @@ export default function TodayScreen() {
   useFocusEffect(
     useCallback(() => {
       if (isLoaded) {
-        scheduleBellNotifications(days, warningMinutes, muted, selectedBellSound);
+        scheduleBellNotifications(days, warningMinutes, muted, bellSounds);
       }
-    }, [isLoaded, days, warningMinutes, muted, selectedBellSound]),
+    }, [isLoaded, days, warningMinutes, muted, bellSounds]),
   );
 
   const today = new Date().getDay();

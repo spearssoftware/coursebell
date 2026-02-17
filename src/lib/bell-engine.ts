@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { parseTime, toMinutes } from './time-utils';
-import type { BellSound, DaySchedule, Period } from '../types';
+import type { BellSound, BellSounds, DaySchedule, Period } from '../types';
 
 const BELL_SOUND_FILES: Record<BellSound, string> = {
   'school-bell': 'school-bell.wav',
@@ -31,10 +31,13 @@ export async function requestNotificationPermissions(): Promise<boolean> {
   return status === 'granted';
 }
 
+type BellType = keyof BellSounds;
+
 interface BellNotification {
   label: string;
   body: string;
   triggerDate: Date;
+  bellType: BellType;
 }
 
 export function computeBellTimes(
@@ -55,6 +58,7 @@ export function computeBellTimes(
           label: period.label,
           body: `${period.label} starting`,
           triggerDate: d,
+          bellType: 'start',
         });
       }
     }
@@ -71,6 +75,7 @@ export function computeBellTimes(
             label: period.label,
             body: `${warningMinutes} minute${warningMinutes === 1 ? '' : 's'} left in ${period.label}`,
             triggerDate: d,
+            bellType: 'warning',
           });
         }
       }
@@ -85,6 +90,7 @@ export function computeBellTimes(
           label: period.label,
           body: `${period.label} ended`,
           triggerDate: d,
+          bellType: 'end',
         });
       }
     }
@@ -93,11 +99,17 @@ export function computeBellTimes(
   return notifications.sort((a, b) => a.triggerDate.getTime() - b.triggerDate.getTime());
 }
 
+const DEFAULT_BELL_SOUNDS: BellSounds = {
+  start: 'school-bell',
+  warning: 'quiet-alert',
+  end: 'school-bell',
+};
+
 export async function scheduleBellNotifications(
   days: DaySchedule[],
   warningMinutes: number,
   muted?: boolean,
-  bellSound: BellSound = 'school-bell',
+  bellSounds: BellSounds = DEFAULT_BELL_SOUNDS,
 ): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
 
@@ -118,7 +130,7 @@ export async function scheduleBellNotifications(
       content: {
         title: '\uD83D\uDD14 School Bell',
         body: bell.body,
-        sound: BELL_SOUND_FILES[bellSound],
+        sound: BELL_SOUND_FILES[bellSounds[bell.bellType]],
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
