@@ -2,7 +2,7 @@
   "expo": {
     "name": "CourseBell",
     "slug": "coursebell-app",
-    "version": "0.6.1",
+    "version": "0.6.2",
     "scheme": "coursebell",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.coursebell",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
