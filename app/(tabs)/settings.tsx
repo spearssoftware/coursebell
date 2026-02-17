@@ -1,16 +1,32 @@
+import { useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert } from 'react-native';
+import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { useSettingsStore } from '../../src/store/settings-store';
 import { requestNotificationPermissions } from '../../src/lib/bell-engine';
 import { colors, spacing, borderRadius, fontSize } from '../../src/theme';
 import type { BellSound } from '../../src/types';
 
+const SOUND_ASSETS: Record<BellSound, ReturnType<typeof require>> = {
+  'school-bell': require('../../assets/sounds/school-bell.wav'),
+  'school-bell2': require('../../assets/sounds/school-bell2.wav'),
+  'old-school-bell': require('../../assets/sounds/old-school-bell.wav'),
+  'bike-bell': require('../../assets/sounds/bike-bell.wav'),
+  'ping': require('../../assets/sounds/ping.wav'),
+  'light-alert': require('../../assets/sounds/light-alert.wav'),
+  'quiet-alert': require('../../assets/sounds/quiet-alert.wav'),
+  'up-and-down': require('../../assets/sounds/up-and-down.wav'),
+};
+
 const BELL_SOUNDS: Array<{ id: BellSound; label: string; icon: string }> = [
-  { id: 'classic', label: 'Classic Bell', icon: 'notifications' },
-  { id: 'chime', label: 'Single Chime', icon: 'musical-note' },
-  { id: 'double-tone', label: 'Double Tone', icon: 'musical-notes' },
-  { id: 'buzzer', label: 'Buzzer', icon: 'megaphone' },
-  { id: 'gentle', label: 'Gentle Melody', icon: 'flower' },
+  { id: 'school-bell', label: 'School Bell', icon: 'notifications' },
+  { id: 'school-bell2', label: 'School Bell 2', icon: 'notifications-outline' },
+  { id: 'old-school-bell', label: 'Old School Bell', icon: 'alarm' },
+  { id: 'bike-bell', label: 'Bike Bell', icon: 'bicycle' },
+  { id: 'ping', label: 'Ping', icon: 'radio-button-on' },
+  { id: 'light-alert', label: 'Light Alert', icon: 'musical-note' },
+  { id: 'quiet-alert', label: 'Quiet Alert', icon: 'volume-low' },
+  { id: 'up-and-down', label: 'Up and Down', icon: 'musical-notes' },
 ];
 
 export default function SettingsScreen() {
@@ -22,6 +38,23 @@ export default function SettingsScreen() {
     setWarningMinutes,
     setNotificationsEnabled,
   } = useSettingsStore();
+
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const previewSound = useCallback(async (id: BellSound) => {
+    if (soundRef.current) {
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
+    }
+    const { sound } = await Audio.Sound.createAsync(SOUND_ASSETS[id]);
+    soundRef.current = sound;
+    await sound.playAsync();
+  }, []);
+
+  const handleSelectSound = useCallback(async (id: BellSound) => {
+    setBellSound(id);
+    previewSound(id);
+  }, [setBellSound, previewSound]);
 
   const handleToggleNotifications = async (value: boolean) => {
     if (value) {
@@ -98,7 +131,7 @@ export default function SettingsScreen() {
             <TouchableOpacity
               key={sound.id}
               style={[styles.soundRow, index < BELL_SOUNDS.length - 1 && styles.soundRowBorder]}
-              onPress={() => setBellSound(sound.id)}
+              onPress={() => handleSelectSound(sound.id)}
               activeOpacity={0.6}
             >
               <View style={styles.rowContent}>
@@ -123,7 +156,7 @@ export default function SettingsScreen() {
           ))}
         </View>
         <Text style={styles.hint}>
-          Custom sounds will play when bell notifications fire. Using default system sound for now.
+          Tap to preview. Selected sound will play when bell notifications fire.
         </Text>
       </View>
 

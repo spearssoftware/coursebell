@@ -1,14 +1,16 @@
 # CourseBell
 
-Never miss a bell. CourseBell helps students and teachers track school bell schedules with notifications for period starts and ends.
+A mobile app that keeps students and teachers on track with customizable school bell schedules and timely notifications. Set up your periods, get alerts before they start and end, and share schedules instantly via QR code.
 
 ## Features
 
-- **Bell schedules** — configure period times for each day of the week
-- **Schedule templates** — save and reuse common schedule patterns
-- **Notifications** — get alerted before periods start and end
-- **QR sharing** — share schedules between devices via QR code or deep link
-- **Day view** — see the full schedule for any day at a glance
+- **Live countdown** — see the current period highlighted and a real-time countdown to the next bell
+- **Flexible schedules** — configure periods (name, start/end time, bells) independently for each weekday
+- **Smart notifications** — get notified when periods start, when they're about to end (1–15 min warning), and when they end
+- **Mute today** — silence all bells for the day with one tap
+- **QR sharing** — generate a QR code or deep link to share your full schedule with others
+- **Copy days** — duplicate one day's periods to another to set up similar schedules quickly
+- **Onboarding** — guided first-launch flow that walks through setup and notification permissions
 
 ## Tech Stack
 

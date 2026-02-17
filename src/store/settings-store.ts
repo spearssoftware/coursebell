@@ -7,7 +7,7 @@ const MUTED_DATE_KEY = '@classhop/mutedDate';
 const ONBOARDING_KEY = '@classhop/hasCompletedOnboarding';
 
 const DEFAULT_SETTINGS: UserSettings = {
-  selectedBellSound: 'classic',
+  selectedBellSound: 'school-bell',
   warningMinutes: 2,
   notificationsEnabled: true,
 };
@@ -56,6 +56,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         AsyncStorage.getItem(ONBOARDING_KEY),
       ]);
       const saved = json ? (JSON.parse(json) as Partial<UserSettings>) : {};
+      const validSounds: BellSound[] = ['school-bell', 'school-bell2', 'old-school-bell', 'bike-bell', 'ping', 'light-alert', 'quiet-alert', 'up-and-down'];
+      if (saved.selectedBellSound && !validSounds.includes(saved.selectedBellSound)) {
+        saved.selectedBellSound = DEFAULT_SETTINGS.selectedBellSound;
+      }
       set({
         ...DEFAULT_SETTINGS,
         ...saved,

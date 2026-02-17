@@ -1,6 +1,17 @@
 import * as Notifications from 'expo-notifications';
 import { parseTime, toMinutes } from './time-utils';
-import type { DaySchedule, Period } from '../types';
+import type { BellSound, DaySchedule, Period } from '../types';
+
+const BELL_SOUND_FILES: Record<BellSound, string> = {
+  'school-bell': 'school-bell.wav',
+  'school-bell2': 'school-bell2.wav',
+  'old-school-bell': 'old-school-bell.wav',
+  'bike-bell': 'bike-bell.wav',
+  'ping': 'ping.wav',
+  'light-alert': 'light-alert.wav',
+  'quiet-alert': 'quiet-alert.wav',
+  'up-and-down': 'up-and-down.wav',
+};
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -86,6 +97,7 @@ export async function scheduleBellNotifications(
   days: DaySchedule[],
   warningMinutes: number,
   muted?: boolean,
+  bellSound: BellSound = 'school-bell',
 ): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
 
@@ -106,7 +118,7 @@ export async function scheduleBellNotifications(
       content: {
         title: '\uD83D\uDD14 School Bell',
         body: bell.body,
-        sound: true,
+        sound: BELL_SOUND_FILES[bellSound],
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,

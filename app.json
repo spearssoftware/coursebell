@@ -43,7 +43,17 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png"
+          "icon": "./assets/icon.png",
+          "sounds": [
+            "./assets/sounds/school-bell.wav",
+            "./assets/sounds/school-bell2.wav",
+            "./assets/sounds/old-school-bell.wav",
+            "./assets/sounds/bike-bell.wav",
+            "./assets/sounds/ping.wav",
+            "./assets/sounds/light-alert.wav",
+            "./assets/sounds/quiet-alert.wav",
+            "./assets/sounds/up-and-down.wav"
+          ]
         }
       ],
       "@react-native-community/datetimepicker"
