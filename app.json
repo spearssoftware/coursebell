@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "ClassHop",
-    "slug": "classhop-app",
+    "name": "CourseBell",
+    "slug": "coursebell-app",
     "version": "1.0.0",
-    "scheme": "classhop",
+    "scheme": "coursebell",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.classhop",
+      "bundleIdentifier": "app.coursebell",
       "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -27,7 +27,7 @@
         "backgroundColor": "#0F766E"
       },
       "edgeToEdgeEnabled": true,
-      "package": "app.classhop"
+      "package": "app.coursebell"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,7 +37,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow ClassHop to access your camera to scan QR codes."
+          "cameraPermission": "Allow CourseBell to access your camera to scan QR codes."
         }
       ],
       [

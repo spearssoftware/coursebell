@@ -131,7 +131,7 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>About</Text>
         <View style={styles.card}>
           <View style={styles.row}>
-            <Text style={styles.rowLabel}>ClassHop</Text>
+            <Text style={styles.rowLabel}>CourseBell</Text>
             <Text style={styles.versionText}>v1.0.0</Text>
           </View>
         </View>

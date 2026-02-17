@@ -34,7 +34,7 @@ export default function ShareScreen() {
 
     const result = decodeSchedule(data);
     if (!result) {
-      Alert.alert('Invalid QR Code', 'This QR code does not contain a valid ClassHop schedule.', [
+      Alert.alert('Invalid QR Code', 'This QR code does not contain a valid CourseBell schedule.', [
         { text: 'OK', onPress: () => setScanned(false) },
       ]);
       return;
@@ -61,7 +61,7 @@ export default function ShareScreen() {
 
   const handleShareLink = async () => {
     const encoded = btoa(qrData);
-    const url = `classhop://import?data=${encoded}`;
+    const url = `coursebell://import?data=${encoded}`;
     try {
       await Share.share({ message: url });
     } catch {
@@ -138,7 +138,7 @@ export default function ShareScreen() {
               <View style={styles.overlay}>
                 <View style={styles.scanFrame} />
               </View>
-              <Text style={styles.scanHint}>Point your camera at a ClassHop QR code</Text>
+              <Text style={styles.scanHint}>Point your camera at a CourseBell QR code</Text>
             </View>
           )}
         </View>

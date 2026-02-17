@@ -25,9 +25,9 @@ interface OnboardingStep {
 const STEPS: OnboardingStep[] = [
   {
     icon: 'school-outline',
-    title: 'Welcome to ClassHop',
+    title: 'Welcome to CourseBell',
     description:
-      'ClassHop helps you never miss a bell. Set up your school schedule and get notified before each period starts and ends.',
+      'CourseBell helps you never miss a bell. Set up your school schedule and get notified before each period starts and ends.',
   },
   {
     icon: 'calendar-outline',
