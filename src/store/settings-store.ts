@@ -17,6 +17,7 @@ const DEFAULT_BELL_SOUNDS: BellSounds = {
 const DEFAULT_SETTINGS: UserSettings = {
   bellSounds: DEFAULT_BELL_SOUNDS,
   warningMinutes: 2,
+  timeBetweenPeriods: 0,
   notificationsEnabled: true,
 };
 
@@ -35,6 +36,7 @@ interface SettingsState extends UserSettings {
   completeOnboarding: () => Promise<void>;
   setBellSound: (bellType: BellType, sound: BellSound) => Promise<void>;
   setWarningMinutes: (minutes: number) => Promise<void>;
+  setTimeBetweenPeriods: (minutes: number) => Promise<void>;
   setNotificationsEnabled: (enabled: boolean) => Promise<void>;
   toggleMuteToday: () => Promise<void>;
   isMutedToday: () => boolean;
@@ -44,6 +46,7 @@ function getSettings(state: SettingsState): UserSettings {
   return {
     bellSounds: state.bellSounds,
     warningMinutes: state.warningMinutes,
+    timeBetweenPeriods: state.timeBetweenPeriods,
     notificationsEnabled: state.notificationsEnabled,
   };
 }
@@ -107,6 +110,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setWarningMinutes: async (minutes: number) => {
     set({ warningMinutes: minutes });
     await persistSettings({ ...getSettings(get()), warningMinutes: minutes });
+  },
+
+  setTimeBetweenPeriods: async (minutes: number) => {
+    set({ timeBetweenPeriods: minutes });
+    await persistSettings({ ...getSettings(get()), timeBetweenPeriods: minutes });
   },
 
   setNotificationsEnabled: async (enabled: boolean) => {

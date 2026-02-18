@@ -25,6 +25,7 @@ export interface BellSounds {
 export interface UserSettings {
   bellSounds: BellSounds;
   warningMinutes: number;
+  timeBetweenPeriods: number;
   notificationsEnabled: boolean;
 }
 

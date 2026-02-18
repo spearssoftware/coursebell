@@ -16,6 +16,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useScheduleStore } from '../../src/store/schedule-store';
+import { useSettingsStore } from '../../src/store/settings-store';
 import { EmptyState } from '../../src/components/EmptyState';
 import { parseTime } from '../../src/lib/time-utils';
 import { colors, spacing, borderRadius, fontSize } from '../../src/theme';
@@ -27,6 +28,7 @@ export default function DayEditorScreen() {
   const dayOfWeek = parseInt(dayParam ?? '1', 10);
   const router = useRouter();
   const { days, addPeriod, updatePeriod, deletePeriod, copyDay } = useScheduleStore();
+  const { timeBetweenPeriods } = useSettingsStore();
   const [showCopyModal, setShowCopyModal] = useState(false);
 
   const daySchedule = days.find((d) => d.dayOfWeek === dayOfWeek);
@@ -34,8 +36,10 @@ export default function DayEditorScreen() {
 
   const handleAddPeriod = () => {
     const lastPeriod = periods[periods.length - 1];
-    const defaultStart = lastPeriod ? lastPeriod.endTime : '08:00';
-    const startMins = parseInt(defaultStart.split(':')[0]) * 60 + parseInt(defaultStart.split(':')[1]);
+    const baseTime = lastPeriod ? lastPeriod.endTime : '08:00';
+    const baseMins = parseInt(baseTime.split(':')[0]) * 60 + parseInt(baseTime.split(':')[1]);
+    const startMins = lastPeriod ? baseMins + timeBetweenPeriods : baseMins;
+    const defaultStart = `${String(Math.floor(startMins / 60)).padStart(2, '0')}:${String(startMins % 60).padStart(2, '0')}`;
     const endMins = startMins + 50;
     const endTime = `${String(Math.floor(endMins / 60)).padStart(2, '0')}:${String(endMins % 60).padStart(2, '0')}`;
 

@@ -66,9 +66,11 @@ export default function SettingsScreen() {
   const {
     bellSounds,
     warningMinutes,
+    timeBetweenPeriods,
     notificationsEnabled,
     setBellSound,
     setWarningMinutes,
+    setTimeBetweenPeriods,
     setNotificationsEnabled,
   } = useSettingsStore();
 
@@ -154,6 +156,40 @@ export default function SettingsScreen() {
         </View>
         <Text style={styles.hint}>
           Periods with "warning before end" enabled will ring {warningMinutes} minute{warningMinutes === 1 ? '' : 's'} before they end.
+        </Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Time Between Periods</Text>
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <View style={styles.rowContent}>
+              <Ionicons name="swap-horizontal-outline" size={20} color={colors.text} />
+              <Text style={styles.rowLabel}>Minutes between periods</Text>
+            </View>
+            <View style={styles.stepper}>
+              <TouchableOpacity
+                style={styles.stepperBtn}
+                onPress={() => {
+                  if (timeBetweenPeriods > 0) setTimeBetweenPeriods(timeBetweenPeriods - 1);
+                }}
+              >
+                <Ionicons name="remove" size={18} color={colors.primary} />
+              </TouchableOpacity>
+              <Text style={styles.stepperValue}>{timeBetweenPeriods}</Text>
+              <TouchableOpacity
+                style={styles.stepperBtn}
+                onPress={() => {
+                  if (timeBetweenPeriods < 30) setTimeBetweenPeriods(timeBetweenPeriods + 1);
+                }}
+              >
+                <Ionicons name="add" size={18} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+        <Text style={styles.hint}>
+          When adding a new period, {timeBetweenPeriods === 0 ? 'it will start immediately after the previous period ends' : `${timeBetweenPeriods} minute${timeBetweenPeriods === 1 ? '' : 's'} will be added between the end of the last period and the start of the next`}.
         </Text>
       </View>
 
