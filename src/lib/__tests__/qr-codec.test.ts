@@ -100,6 +100,10 @@ describe('decodeSchedule', () => {
     expect(decodeSchedule('2|')).toBeNull();
   });
 
+  it('returns null for day segment missing colon separator', () => {
+    expect(decodeSchedule('2|2|invalid')).toBeNull();
+  });
+
   it('handles empty schedule', () => {
     const emptyDays: DaySchedule[] = Array.from({ length: 7 }, (_, i) => ({
       dayOfWeek: i,

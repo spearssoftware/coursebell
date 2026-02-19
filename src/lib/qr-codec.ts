@@ -34,7 +34,12 @@ export function decodeSchedule(data: string): { days: DaySchedule[]; warningMinu
     const warningMinutes = parseInt(parts[1], 10);
     if (isNaN(warningMinutes)) return null;
 
-    const days: DaySchedule[] = parts.slice(2).map((dayPart) => {
+    const dayParts = parts.slice(2);
+    for (const dp of dayParts) {
+      if (!dp.includes(':')) return null;
+    }
+
+    const days: DaySchedule[] = dayParts.map((dayPart) => {
       const colonIdx = dayPart.indexOf(':');
       const dayStr = dayPart.substring(0, colonIdx);
       const periodsStr = dayPart.substring(colonIdx + 1);
