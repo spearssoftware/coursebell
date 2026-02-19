@@ -29,18 +29,3 @@ export interface UserSettings {
   notificationsEnabled: boolean;
 }
 
-export interface SharePayload {
-  v: 1;
-  warningMinutes: number;
-  days: Record<
-    string,
-    Array<{
-      label: string;
-      start: string;
-      end: string;
-      bs: boolean;
-      be: boolean;
-      bw: boolean;
-    }>
-  >;
-}

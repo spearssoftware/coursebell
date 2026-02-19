@@ -1,53 +1,59 @@
-import type { DaySchedule, SharePayload } from '../types';
+import type { DaySchedule } from '../types';
+
+// Compact format: "2|{warnMin}|{day}:{label},{start},{end},{bells};...| ..."
+// bells = 3-bit bitmask: bellAtStart=4, bellAtEnd=2, bellBeforeEnd=1
+
+function bellsToNum(bs: boolean, be: boolean, bw: boolean): number {
+  return (bs ? 4 : 0) | (be ? 2 : 0) | (bw ? 1 : 0);
+}
+
+function numToBells(n: number): { bellAtStart: boolean; bellAtEnd: boolean; bellBeforeEnd: boolean } {
+  return { bellAtStart: (n & 4) !== 0, bellAtEnd: (n & 2) !== 0, bellBeforeEnd: (n & 1) !== 0 };
+}
 
 export function encodeSchedule(days: DaySchedule[], warningMinutes: number): string {
-  const daysMap: SharePayload['days'] = {};
+  const parts: string[] = ['2', String(warningMinutes)];
 
   for (const day of days) {
     if (day.periods.length === 0) continue;
-    daysMap[String(day.dayOfWeek)] = day.periods.map((p) => ({
-      label: p.label,
-      start: p.startTime,
-      end: p.endTime,
-      bs: p.bellAtStart,
-      be: p.bellAtEnd,
-      bw: p.bellBeforeEnd,
-    }));
+    const periods = day.periods
+      .map((p) => `${p.label},${p.startTime},${p.endTime},${bellsToNum(p.bellAtStart, p.bellAtEnd, p.bellBeforeEnd)}`)
+      .join(';');
+    parts.push(`${day.dayOfWeek}:${periods}`);
   }
 
-  const payload: SharePayload = {
-    v: 1,
-    warningMinutes,
-    days: daysMap,
-  };
-
-  return JSON.stringify(payload);
+  return parts.join('|');
 }
 
-export function decodeSchedule(json: string): { days: DaySchedule[]; warningMinutes: number } | null {
+export function decodeSchedule(data: string): { days: DaySchedule[]; warningMinutes: number } | null {
   try {
-    const payload = JSON.parse(json) as SharePayload;
-    if (payload.v !== 1) return null;
-    if (typeof payload.warningMinutes !== 'number') return null;
-    if (!payload.days || typeof payload.days !== 'object') return null;
-
     const { generateId } = require('./id');
+    const parts = data.split('|');
+    if (parts[0] !== '2') return null;
 
-    const days: DaySchedule[] = Object.entries(payload.days).map(([dayStr, periods]) => ({
-      dayOfWeek: parseInt(dayStr, 10),
-      periods: (periods ?? []).map((p, i) => ({
-        id: generateId() as string,
-        label: (p.label as string) ?? '',
-        startTime: (p.start as string) ?? '08:00',
-        endTime: (p.end as string) ?? '08:50',
-        sortOrder: i,
-        bellAtStart: (p.bs as boolean) ?? true,
-        bellAtEnd: (p.be as boolean) ?? true,
-        bellBeforeEnd: (p.bw as boolean) ?? false,
-      })),
-    }));
+    const warningMinutes = parseInt(parts[1], 10);
+    if (isNaN(warningMinutes)) return null;
 
-    return { days, warningMinutes: payload.warningMinutes };
+    const days: DaySchedule[] = parts.slice(2).map((dayPart) => {
+      const colonIdx = dayPart.indexOf(':');
+      const dayStr = dayPart.substring(0, colonIdx);
+      const periodsStr = dayPart.substring(colonIdx + 1);
+      const periods = periodsStr.split(';').map((seg, i) => {
+        const [label, start, end, bellStr] = seg.split(',');
+        const bells = numToBells(parseInt(bellStr, 10));
+        return {
+          id: generateId() as string,
+          label: label ?? '',
+          startTime: start ?? '08:00',
+          endTime: end ?? '08:50',
+          sortOrder: i,
+          ...bells,
+        };
+      });
+      return { dayOfWeek: parseInt(dayStr, 10), periods };
+    });
+
+    return { days, warningMinutes };
   } catch {
     return null;
   }
