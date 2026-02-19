@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -26,7 +26,7 @@ export default function ShareScreen() {
   const [scanned, setScanned] = useState(false);
 
   const hasPeriods = days.some((d) => d.periods.length > 0);
-  const qrData = encodeSchedule(days, warningMinutes);
+  const qrData = hasPeriods ? encodeSchedule(days, warningMinutes) : '';
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (scanned) return;
@@ -98,7 +98,7 @@ export default function ShareScreen() {
           {hasPeriods ? (
             <>
               <View style={styles.qrCard}>
-                <QRCode value={qrData} size={220} backgroundColor={colors.white} />
+                <SafeQRCode value={qrData} size={220} />
               </View>
               <Text style={styles.shareHint}>
                 Have another teacher scan this QR code to share your schedule
@@ -145,6 +145,30 @@ export default function ShareScreen() {
       )}
     </View>
   );
+}
+
+class SafeQRCode extends React.Component<
+  { value: string; size: number },
+  { error: boolean }
+> {
+  state = { error: false };
+
+  static getDerivedStateFromError() {
+    return { error: true };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <View style={{ width: this.props.size, height: this.props.size, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: colors.textSecondary, textAlign: 'center', fontSize: fontSize.sm }}>
+            Schedule is too large to display as a QR code. Use Share Link instead.
+          </Text>
+        </View>
+      );
+    }
+    return <QRCode value={this.props.value} size={this.props.size} backgroundColor={colors.white} />;
+  }
 }
 
 const styles = StyleSheet.create({

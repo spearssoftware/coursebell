@@ -96,15 +96,8 @@ export default function DayEditorScreen() {
       <Stack.Screen
         options={{
           headerTitle: DAY_NAMES[dayOfWeek],
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -8 }}
-            >
-              <Ionicons name="chevron-back" size={28} color={colors.primary} />
-              <Text style={{ color: colors.primary, fontSize: 17 }}>Schedule</Text>
-            </TouchableOpacity>
-          ),
+          headerBackTitle: 'Schedule',
+          headerTintColor: colors.primary,
           headerRight: () => (
             <TouchableOpacity onPress={() => setShowCopyModal(true)}>
               <Ionicons name="copy-outline" size={22} color={colors.primary} />
