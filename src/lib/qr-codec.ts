@@ -32,7 +32,7 @@ export function decodeSchedule(data: string): { days: DaySchedule[]; warningMinu
     if (parts[0] !== '2') return null;
 
     const warningMinutes = parseInt(parts[1], 10);
-    if (isNaN(warningMinutes)) return null;
+    if (isNaN(warningMinutes) || warningMinutes < 1 || warningMinutes > 60) return null;
 
     const dayParts = parts.slice(2);
     for (const dp of dayParts) {

@@ -25,7 +25,7 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 
 export default function DayEditorScreen() {
   const { dayOfWeek: dayParam } = useLocalSearchParams<{ dayOfWeek: string }>();
-  const dayOfWeek = parseInt(dayParam ?? '1', 10);
+  const dayOfWeek = Math.max(0, Math.min(6, parseInt(dayParam ?? '1', 10) || 0));
   const router = useRouter();
   const { days, addPeriod, updatePeriod, deletePeriod, copyDay } = useScheduleStore();
   const { timeBetweenPeriods } = useSettingsStore();
