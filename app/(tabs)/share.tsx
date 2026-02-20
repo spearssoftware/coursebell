@@ -60,7 +60,7 @@ export default function ShareScreen() {
   };
 
   const handleShareLink = async () => {
-    const encoded = btoa(qrData);
+    const encoded = encodeURIComponent(btoa(qrData));
     const url = `coursebell://import?data=${encoded}`;
     try {
       await Share.share({ message: url });
