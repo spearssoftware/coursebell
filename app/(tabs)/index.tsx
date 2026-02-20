@@ -36,10 +36,11 @@ export default function TodayScreen() {
   const { days, isLoaded } = useScheduleStore();
   const warningMinutes = useSettingsStore((s) => s.warningMinutes);
   const bellSounds = useSettingsStore((s) => s.bellSounds);
+  const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
   const mutedDate = useSettingsStore((s) => s.mutedDate);
   const isMutedToday = useSettingsStore((s) => s.isMutedToday);
   const toggleMuteToday = useSettingsStore((s) => s.toggleMuteToday);
-  const muted = isMutedToday();
+  const muted = !notificationsEnabled || isMutedToday();
   const [now, setNow] = useState(getCurrentTime);
 
   useEffect(() => {
