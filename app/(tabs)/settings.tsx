@@ -2,6 +2,7 @@ import { useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settings-store';
 import { requestNotificationPermissions } from '../../src/lib/bell-engine';
 import { colors, spacing, borderRadius, fontSize } from '../../src/theme';
@@ -63,6 +64,7 @@ function SoundPicker({
 }
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const {
     bellSounds,
     warningMinutes,
@@ -218,6 +220,23 @@ export default function SettingsScreen() {
         <Text style={styles.hint}>
           Tap any sound to preview it.
         </Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Data</Text>
+        <View style={styles.card}>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => router.push('/history')}
+            activeOpacity={0.6}
+          >
+            <View style={styles.rowContent}>
+              <Ionicons name="time-outline" size={20} color={colors.text} />
+              <Text style={styles.rowLabel}>Schedule History</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.section}>

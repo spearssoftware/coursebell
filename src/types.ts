@@ -22,6 +22,13 @@ export interface BellSounds {
   end: BellSound;
 }
 
+export interface ScheduleSnapshot {
+  id: string;
+  timestamp: number;
+  label: string;
+  days: DaySchedule[];
+}
+
 export interface UserSettings {
   bellSounds: BellSounds;
   warningMinutes: number;

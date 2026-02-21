@@ -20,6 +20,7 @@ Notifications.setNotificationHandler({
 
 export default function RootLayout() {
   const loadData = useScheduleStore((s) => s.loadData);
+  const loadHistory = useScheduleStore((s) => s.loadHistory);
   const isScheduleLoaded = useScheduleStore((s) => s.isLoaded);
   const loadSettings = useSettingsStore((s) => s.loadSettings);
   const isSettingsLoaded = useSettingsStore((s) => s.isLoaded);
@@ -27,6 +28,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     loadData();
+    loadHistory();
     loadSettings();
   }, []);
 
@@ -65,6 +67,13 @@ export default function RootLayout() {
             options={{
               presentation: 'card',
               headerTitle: 'Edit Day',
+            }}
+          />
+          <Stack.Screen
+            name="history"
+            options={{
+              presentation: 'card',
+              headerTitle: 'Schedule History',
             }}
           />
         </Stack>
