@@ -99,7 +99,7 @@ export default function DayEditorScreen() {
           headerBackTitle: 'Schedule',
           headerTintColor: colors.primary,
           headerRight: () => (
-            <TouchableOpacity onPress={() => setShowCopyModal(true)}>
+            <TouchableOpacity onPress={() => setShowCopyModal(true)} style={{ padding: 4 }}>
               <Ionicons name="copy-outline" size={22} color={colors.primary} />
             </TouchableOpacity>
           ),
