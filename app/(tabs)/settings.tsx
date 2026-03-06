@@ -1,5 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import Constants from 'expo-constants';
 import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -244,7 +245,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>CourseBell</Text>
-            <Text style={styles.versionText}>v1.0.0</Text>
+            <Text style={styles.versionText}>v{Constants.expoConfig?.version ?? '—'}</Text>
           </View>
         </View>
       </View>

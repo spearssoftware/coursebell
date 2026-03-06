@@ -13,16 +13,6 @@ const BELL_SOUND_FILES: Record<BellSound, string> = {
   'up-and-down': 'up-and-down.wav',
 };
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
-
 export async function requestNotificationPermissions(): Promise<boolean> {
   const { status: existing } = await Notifications.getPermissionsAsync();
   if (existing === 'granted') return true;

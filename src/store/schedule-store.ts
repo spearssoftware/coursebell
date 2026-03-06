@@ -90,11 +90,6 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
   },
 
   updatePeriod: async (dayOfWeek: number, periodId: string, updates: Partial<Period>) => {
-    const currentPeriod = get()
-      .days.find((d) => d.dayOfWeek === dayOfWeek)
-      ?.periods.find((p) => p.id === periodId);
-    const label = currentPeriod ? `Before editing ${currentPeriod.label}` : 'Before editing period';
-    const history = await takeSnapshot(label, get().days, get().history);
     const days = get().days.map((d) => {
       if (d.dayOfWeek !== dayOfWeek) return d;
       return {
@@ -102,7 +97,7 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         periods: d.periods.map((p) => (p.id === periodId ? { ...p, ...updates } : p)),
       };
     });
-    set({ days, history });
+    set({ days });
     await persistDays(days);
   },
 
