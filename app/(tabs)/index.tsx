@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { useScheduleStore } from '../../src/store/schedule-store';
 import { useSettingsStore } from '../../src/store/settings-store';
@@ -20,16 +21,35 @@ function getActivePeriodIndex(periods: Period[], now: string): number {
   );
 }
 
-function getNextBellTime(periods: Period[], now: string): { period: Period; time: string } | undefined {
+function toHHMM(totalMinutes: number): string {
+  return `${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`;
+}
+
+function getNextBellTime(
+  periods: Period[],
+  now: string,
+  warningMinutes: number,
+): { period: Period; time: string } | undefined {
+  const candidates: { period: Period; time: string }[] = [];
+
   for (const p of periods) {
     if (p.bellAtStart && isTimeBefore(now, p.startTime)) {
-      return { period: p, time: p.startTime };
+      candidates.push({ period: p, time: p.startTime });
+    }
+    if (p.bellBeforeEnd) {
+      const endMins = parseInt(p.endTime.split(':')[0]) * 60 + parseInt(p.endTime.split(':')[1]);
+      const warnTime = toHHMM(endMins - warningMinutes);
+      if (isTimeBefore(now, warnTime)) {
+        candidates.push({ period: p, time: warnTime });
+      }
     }
     if (p.bellAtEnd && isTimeBefore(now, p.endTime)) {
-      return { period: p, time: p.endTime };
+      candidates.push({ period: p, time: p.endTime });
     }
   }
-  return undefined;
+
+  if (candidates.length === 0) return undefined;
+  return candidates.reduce((a, b) => (a.time < b.time ? a : b));
 }
 
 export default function TodayScreen() {
@@ -37,11 +57,11 @@ export default function TodayScreen() {
   const warningMinutes = useSettingsStore((s) => s.warningMinutes);
   const bellSounds = useSettingsStore((s) => s.bellSounds);
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
-  const mutedDate = useSettingsStore((s) => s.mutedDate);
-  const isMutedToday = useSettingsStore((s) => s.isMutedToday);
+  const isMutedToday = useSettingsStore((s) => s.isMutedToday());
   const toggleMuteToday = useSettingsStore((s) => s.toggleMuteToday);
-  const muted = !notificationsEnabled || isMutedToday();
+  const muted = !notificationsEnabled || isMutedToday;
   const [now, setNow] = useState(getCurrentTime);
+  const [osPermissionDenied, setOsPermissionDenied] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(getCurrentTime()), 1000);
@@ -53,7 +73,14 @@ export default function TodayScreen() {
       if (isLoaded) {
         scheduleBellNotifications(days, warningMinutes, muted, bellSounds);
       }
-    }, [isLoaded, days, warningMinutes, muted, bellSounds]),
+      if (notificationsEnabled) {
+        Notifications.getPermissionsAsync().then(({ status }) => {
+          setOsPermissionDenied(status !== 'granted');
+        });
+      } else {
+        setOsPermissionDenied(false);
+      }
+    }, [isLoaded, days, warningMinutes, muted, bellSounds, notificationsEnabled]),
   );
 
   const today = new Date().getDay();
@@ -61,7 +88,7 @@ export default function TodayScreen() {
   const periods = daySchedule?.periods ?? [];
 
   const activePeriodIndex = getActivePeriodIndex(periods, now);
-  const nextBell = getNextBellTime(periods, now);
+  const nextBell = getNextBellTime(periods, now, warningMinutes);
   const allDone =
     periods.length > 0 &&
     isTimeAfterOrEqual(now, periods[periods.length - 1].endTime);
@@ -87,6 +114,19 @@ export default function TodayScreen() {
         <Text style={styles.date}>{dateStr}</Text>
       </View>
 
+      {osPermissionDenied && (
+        <TouchableOpacity
+          style={styles.permissionBanner}
+          onPress={() => Notifications.getPermissionsAsync()}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="warning-outline" size={16} color={colors.white} />
+          <Text style={styles.permissionBannerText}>
+            Notifications are blocked in device Settings — bells won't ring
+          </Text>
+        </TouchableOpacity>
+      )}
+
       {periods.length > 0 && (
         <TouchableOpacity
           style={[styles.muteButton, muted && styles.muteButtonActive]}
@@ -94,7 +134,7 @@ export default function TodayScreen() {
           activeOpacity={0.7}
         >
           <Ionicons
-            name={muted ? 'notifications-off' : 'notifications-off-outline'}
+            name={muted ? 'notifications-off' : 'notifications-outline'}
             size={18}
             color={muted ? colors.white : colors.textSecondary}
           />
@@ -170,6 +210,22 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  permissionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.accent,
+    borderRadius: borderRadius.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+  },
+  permissionBannerText: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.white,
   },
   muteButton: {
     flexDirection: 'row',
