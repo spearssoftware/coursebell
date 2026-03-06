@@ -146,3 +146,39 @@ describe('scheduleBellNotifications', () => {
     jest.useRealTimers();
   });
 });
+
+describe('scheduleBellNotifications — muted', () => {
+  it('cancels existing notifications but schedules nothing when muted', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 1, 16, 7, 0, 0));
+
+    await scheduleBellNotifications(makeDays(periods), 2, true);
+
+    expect(mockCancel).toHaveBeenCalledTimes(1);
+    expect(mockSchedule).not.toHaveBeenCalled();
+
+    jest.useRealTimers();
+  });
+});
+
+describe('scheduleBellNotifications — custom sounds', () => {
+  it('uses the specified bell sound for each notification type', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 1, 16, 7, 0, 0));
+
+    await scheduleBellNotifications(makeDays([periods[0]]), 2, false, {
+      start: 'bike-bell',
+      warning: 'ping',
+      end: 'old-school-bell',
+    });
+
+    const sounds = mockSchedule.mock.calls.map(
+      (call: [{ content: { sound: string } }]) => call[0].content.sound,
+    );
+    expect(sounds).toContain('bike-bell.wav');
+    expect(sounds).toContain('ping.wav');
+    expect(sounds).toContain('old-school-bell.wav');
+
+    jest.useRealTimers();
+  });
+});
