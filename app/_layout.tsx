@@ -67,6 +67,7 @@ export default function RootLayout() {
             options={{
               presentation: 'card',
               headerTitle: 'Edit Day',
+              headerBackTitle: 'Schedule',
             }}
           />
           <Stack.Screen
@@ -74,6 +75,7 @@ export default function RootLayout() {
             options={{
               presentation: 'card',
               headerTitle: 'Schedule History',
+              headerBackTitle: 'Settings',
             }}
           />
         </Stack>
