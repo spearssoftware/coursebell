@@ -17,6 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "app.coursebell",
       "buildNumber": "0.6.12",
+      "privacyUrl": "https://spearssoftware.com/apps/coursebell/privacy-policy",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
