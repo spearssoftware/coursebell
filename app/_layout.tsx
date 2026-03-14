@@ -78,6 +78,10 @@ export default function RootLayout() {
               headerBackTitle: 'Settings',
             }}
           />
+          <Stack.Screen
+            name="import"
+            options={{ headerShown: false }}
+          />
         </Stack>
       </ErrorBoundary>
     </>
