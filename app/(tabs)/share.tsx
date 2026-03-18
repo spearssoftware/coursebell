@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -24,18 +24,20 @@ export default function ShareScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('share');
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const scanLock = useRef(false);
 
   const hasPeriods = days.some((d) => d.periods.length > 0);
   const qrData = hasPeriods ? encodeSchedule(days, warningMinutes) : '';
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (scanned) return;
+    if (scanLock.current) return;
+    scanLock.current = true;
     setScanned(true);
 
     const result = decodeSchedule(data);
     if (!result) {
       Alert.alert('Invalid QR Code', 'This QR code does not contain a valid CourseBell schedule.', [
-        { text: 'OK', onPress: () => setScanned(false) },
+        { text: 'OK', onPress: () => { scanLock.current = false; setScanned(false); } },
       ]);
       return;
     }
@@ -45,12 +47,11 @@ export default function ShareScreen() {
       'Import Schedule',
       `Found schedule with ${dayCount} day(s) configured.\n\nThis will replace your current schedule.`,
       [
-        { text: 'Cancel', style: 'cancel', onPress: () => setScanned(false) },
+        { text: 'Cancel', style: 'cancel', onPress: () => { scanLock.current = false; setScanned(false); } },
         {
           text: 'Import',
           onPress: async () => {
             await importSchedule(result.days);
-            setScanned(false);
             setActiveTab('share');
             await setWarningMinutes(result.warningMinutes);
             setTimeout(() => {
@@ -87,6 +88,7 @@ export default function ShareScreen() {
           style={[styles.tab, activeTab === 'import' && styles.activeTab]}
           onPress={() => {
             setActiveTab('import');
+            scanLock.current = false;
             setScanned(false);
           }}
         >
