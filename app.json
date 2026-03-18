@@ -2,7 +2,7 @@
   "expo": {
     "name": "CourseBell",
     "slug": "coursebell-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "scheme": "coursebell",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.coursebell",
-      "buildNumber": "1.0.0",
+      "buildNumber": "1.0.1",
       "privacyUrl": "https://spearssoftware.com/apps/coursebell/privacy-policy",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
