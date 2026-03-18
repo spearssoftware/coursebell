@@ -50,9 +50,12 @@ export default function ShareScreen() {
           text: 'Import',
           onPress: async () => {
             await importSchedule(result.days);
-            setWarningMinutes(result.warningMinutes);
-            Alert.alert('Imported!', 'Schedule has been imported successfully.');
             setScanned(false);
+            setActiveTab('share');
+            await setWarningMinutes(result.warningMinutes);
+            setTimeout(() => {
+              Alert.alert('Imported!', 'Schedule has been imported successfully.');
+            }, 0);
           },
         },
       ],
