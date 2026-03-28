@@ -130,7 +130,7 @@ export default function ShareScreen() {
                 subtitle="Allow camera access to scan QR codes"
               />
               <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-                <Text style={styles.permissionButtonText}>Allow Camera</Text>
+                <Text style={styles.permissionButtonText}>Continue</Text>
               </TouchableOpacity>
             </View>
           ) : (
