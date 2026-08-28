@@ -10,7 +10,7 @@ import SettingsScreen from '../settings';
 
 const defaultBellSounds = {
   start: 'school-bell' as const,
-  warning: 'quiet-alert' as const,
+  warning: 'double-beep' as const,
   end: 'school-bell' as const,
 };
 
@@ -62,7 +62,7 @@ describe('SettingsScreen', () => {
 
   it('shows checkmarks on selected bell sounds', () => {
     useSettingsStore.setState({
-      bellSounds: { start: 'ping', warning: 'ping', end: 'ping' },
+      bellSounds: { start: 'whistle', warning: 'whistle', end: 'whistle' },
       isLoaded: true,
     });
 

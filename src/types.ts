@@ -14,13 +14,21 @@ export interface DaySchedule {
   periods: Period[];
 }
 
-export type BellSound = 'school-bell' | 'school-bell2' | 'old-school-bell' | 'bike-bell' | 'ping' | 'light-alert' | 'quiet-alert' | 'up-and-down';
+export const BELL_SOUND_IDS = ['school-bell', 'dinner-bell', 'chime', 'sonar-alarm', 'classic-alarm', 'melodic-alarm', 'double-beep', 'up-and-down', 'retro-sms', 'soft-triple', 'whistle', 'eight-bit'] as const;
+
+export type BellSound = (typeof BELL_SOUND_IDS)[number];
 
 export interface BellSounds {
   start: BellSound;
   warning: BellSound;
   end: BellSound;
 }
+
+export const DEFAULT_BELL_SOUNDS: BellSounds = {
+  start: 'school-bell',
+  warning: 'double-beep',
+  end: 'school-bell',
+};
 
 export interface ScheduleSnapshot {
   id: string;

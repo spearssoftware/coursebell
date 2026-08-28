@@ -47,13 +47,17 @@
           "icon": "./assets/icon.png",
           "sounds": [
             "./assets/sounds/school-bell.wav",
-            "./assets/sounds/school-bell2.wav",
-            "./assets/sounds/old-school-bell.wav",
-            "./assets/sounds/bike-bell.wav",
-            "./assets/sounds/ping.wav",
-            "./assets/sounds/light-alert.wav",
-            "./assets/sounds/quiet-alert.wav",
-            "./assets/sounds/up-and-down.wav"
+            "./assets/sounds/dinner-bell.wav",
+            "./assets/sounds/chime.wav",
+            "./assets/sounds/sonar-alarm.wav",
+            "./assets/sounds/classic-alarm.wav",
+            "./assets/sounds/melodic-alarm.wav",
+            "./assets/sounds/double-beep.wav",
+            "./assets/sounds/up-and-down.wav",
+            "./assets/sounds/retro-sms.wav",
+            "./assets/sounds/soft-triple.wav",
+            "./assets/sounds/whistle.wav",
+            "./assets/sounds/eight-bit.wav"
           ]
         }
       ],
