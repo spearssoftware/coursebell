@@ -1,7 +1,7 @@
-import { useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import Constants from 'expo-constants';
-import { Audio } from 'expo-av';
+import { useAudioPlayer } from 'expo-audio';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settings-store';
@@ -85,17 +85,12 @@ export default function SettingsScreen() {
     setNotificationsEnabled,
   } = useSettingsStore();
 
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const player = useAudioPlayer(null);
 
-  const previewSound = useCallback(async (id: BellSound) => {
-    if (soundRef.current) {
-      await soundRef.current.unloadAsync();
-      soundRef.current = null;
-    }
-    const { sound } = await Audio.Sound.createAsync(SOUND_ASSETS[id]);
-    soundRef.current = sound;
-    await sound.playAsync();
-  }, []);
+  const previewSound = useCallback((id: BellSound) => {
+    player.replace(SOUND_ASSETS[id]);
+    player.play();
+  }, [player]);
 
   const handleSelectSound = useCallback((bellType: keyof BellSounds, id: BellSound) => {
     setBellSound(bellType, id);

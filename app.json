@@ -7,17 +7,10 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0F766E"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.coursebell",
       "buildNumber": "1.0.2",
-      "privacyUrl": "https://spearssoftware.com/apps/coursebell/privacy-policy",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -27,7 +20,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0F766E"
       },
-      "edgeToEdgeEnabled": true,
       "package": "app.coursebell"
     },
     "web": {
@@ -61,7 +53,18 @@
           ]
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-status-bar",
+      "expo-asset",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0F766E"
+        }
+      ]
     ]
   }
 }
