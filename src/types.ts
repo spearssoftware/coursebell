@@ -14,7 +14,7 @@ export interface DaySchedule {
   periods: Period[];
 }
 
-export type BellSound = 'school-bell' | 'school-bell2' | 'old-school-bell' | 'bike-bell' | 'ping' | 'light-alert' | 'quiet-alert' | 'up-and-down';
+export type BellSound = 'school-bell' | 'dinner-bell' | 'chime' | 'sonar-alarm' | 'classic-alarm' | 'melodic-alarm' | 'double-beep' | 'up-and-down' | 'retro-sms' | 'soft-triple' | 'whistle' | 'eight-bit';
 
 export interface BellSounds {
   start: BellSound;

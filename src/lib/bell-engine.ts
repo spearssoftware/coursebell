@@ -4,13 +4,17 @@ import type { BellSound, BellSounds, DaySchedule, Period } from '../types';
 
 const BELL_SOUND_FILES: Record<BellSound, string> = {
   'school-bell': 'school-bell.wav',
-  'school-bell2': 'school-bell2.wav',
-  'old-school-bell': 'old-school-bell.wav',
-  'bike-bell': 'bike-bell.wav',
-  'ping': 'ping.wav',
-  'light-alert': 'light-alert.wav',
-  'quiet-alert': 'quiet-alert.wav',
+  'dinner-bell': 'dinner-bell.wav',
+  'chime': 'chime.wav',
+  'sonar-alarm': 'sonar-alarm.wav',
+  'classic-alarm': 'classic-alarm.wav',
+  'melodic-alarm': 'melodic-alarm.wav',
+  'double-beep': 'double-beep.wav',
   'up-and-down': 'up-and-down.wav',
+  'retro-sms': 'retro-sms.wav',
+  'soft-triple': 'soft-triple.wav',
+  'whistle': 'whistle.wav',
+  'eight-bit': 'eight-bit.wav',
 };
 
 export async function requestNotificationPermissions(): Promise<boolean> {
@@ -91,7 +95,7 @@ export function computeBellTimes(
 
 const DEFAULT_BELL_SOUNDS: BellSounds = {
   start: 'school-bell',
-  warning: 'quiet-alert',
+  warning: 'double-beep',
   end: 'school-bell',
 };
 

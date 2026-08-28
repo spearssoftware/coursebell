@@ -6,11 +6,11 @@ const SETTINGS_KEY = '@classhop/settings';
 const MUTED_DATE_KEY = '@classhop/mutedDate';
 const ONBOARDING_KEY = '@classhop/hasCompletedOnboarding';
 
-const VALID_SOUNDS: BellSound[] = ['school-bell', 'school-bell2', 'old-school-bell', 'bike-bell', 'ping', 'light-alert', 'quiet-alert', 'up-and-down'];
+const VALID_SOUNDS: BellSound[] = ['school-bell', 'dinner-bell', 'chime', 'sonar-alarm', 'classic-alarm', 'melodic-alarm', 'double-beep', 'up-and-down', 'retro-sms', 'soft-triple', 'whistle', 'eight-bit'];
 
 const DEFAULT_BELL_SOUNDS: BellSounds = {
   start: 'school-bell',
-  warning: 'quiet-alert',
+  warning: 'double-beep',
   end: 'school-bell',
 };
 

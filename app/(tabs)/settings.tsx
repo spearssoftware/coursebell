@@ -11,24 +11,32 @@ import type { BellSound, BellSounds } from '../../src/types';
 
 const SOUND_ASSETS: Record<BellSound, ReturnType<typeof require>> = {
   'school-bell': require('../../assets/sounds/school-bell.wav'),
-  'school-bell2': require('../../assets/sounds/school-bell2.wav'),
-  'old-school-bell': require('../../assets/sounds/old-school-bell.wav'),
-  'bike-bell': require('../../assets/sounds/bike-bell.wav'),
-  'ping': require('../../assets/sounds/ping.wav'),
-  'light-alert': require('../../assets/sounds/light-alert.wav'),
-  'quiet-alert': require('../../assets/sounds/quiet-alert.wav'),
+  'dinner-bell': require('../../assets/sounds/dinner-bell.wav'),
+  'chime': require('../../assets/sounds/chime.wav'),
+  'sonar-alarm': require('../../assets/sounds/sonar-alarm.wav'),
+  'classic-alarm': require('../../assets/sounds/classic-alarm.wav'),
+  'melodic-alarm': require('../../assets/sounds/melodic-alarm.wav'),
+  'double-beep': require('../../assets/sounds/double-beep.wav'),
   'up-and-down': require('../../assets/sounds/up-and-down.wav'),
+  'retro-sms': require('../../assets/sounds/retro-sms.wav'),
+  'soft-triple': require('../../assets/sounds/soft-triple.wav'),
+  'whistle': require('../../assets/sounds/whistle.wav'),
+  'eight-bit': require('../../assets/sounds/eight-bit.wav'),
 };
 
 const BELL_SOUNDS: Array<{ id: BellSound; label: string }> = [
   { id: 'school-bell', label: 'School Bell' },
-  { id: 'school-bell2', label: 'School Bell 2' },
-  { id: 'old-school-bell', label: 'Old School Bell' },
-  { id: 'bike-bell', label: 'Bike Bell' },
-  { id: 'ping', label: 'Ping' },
-  { id: 'light-alert', label: 'Light Alert' },
-  { id: 'quiet-alert', label: 'Quiet Alert' },
+  { id: 'dinner-bell', label: 'Dinner Bell' },
+  { id: 'chime', label: 'Chime' },
+  { id: 'sonar-alarm', label: 'Sonar Alarm' },
+  { id: 'classic-alarm', label: 'Classic Alarm' },
+  { id: 'melodic-alarm', label: 'Melodic Alarm' },
+  { id: 'double-beep', label: 'Double Beep' },
   { id: 'up-and-down', label: 'Up and Down' },
+  { id: 'retro-sms', label: 'Retro SMS' },
+  { id: 'soft-triple', label: 'Soft Triple' },
+  { id: 'whistle', label: 'Whistle' },
+  { id: 'eight-bit', label: '8-Bit' },
 ];
 
 function SoundPicker({

@@ -167,17 +167,17 @@ describe('scheduleBellNotifications — custom sounds', () => {
     jest.setSystemTime(new Date(2026, 1, 16, 7, 0, 0));
 
     await scheduleBellNotifications(makeDays([periods[0]]), 2, false, {
-      start: 'bike-bell',
-      warning: 'ping',
-      end: 'old-school-bell',
+      start: 'dinner-bell',
+      warning: 'double-beep',
+      end: 'chime',
     });
 
     const sounds = mockSchedule.mock.calls.map(
       (call: [{ content: { sound: string } }]) => call[0].content.sound,
     );
-    expect(sounds).toContain('bike-bell.wav');
-    expect(sounds).toContain('ping.wav');
-    expect(sounds).toContain('old-school-bell.wav');
+    expect(sounds).toContain('dinner-bell.wav');
+    expect(sounds).toContain('double-beep.wav');
+    expect(sounds).toContain('chime.wav');
 
     jest.useRealTimers();
   });
