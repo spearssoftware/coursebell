@@ -1,18 +1,13 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BELL_SOUND_IDS, DEFAULT_BELL_SOUNDS } from '../types';
 import type { BellSound, BellSounds, UserSettings } from '../types';
 
 const SETTINGS_KEY = '@classhop/settings';
 const MUTED_DATE_KEY = '@classhop/mutedDate';
 const ONBOARDING_KEY = '@classhop/hasCompletedOnboarding';
 
-const VALID_SOUNDS: BellSound[] = ['school-bell', 'dinner-bell', 'chime', 'sonar-alarm', 'classic-alarm', 'melodic-alarm', 'double-beep', 'up-and-down', 'retro-sms', 'soft-triple', 'whistle', 'eight-bit'];
-
-const DEFAULT_BELL_SOUNDS: BellSounds = {
-  start: 'school-bell',
-  warning: 'double-beep',
-  end: 'school-bell',
-};
+const VALID_SOUNDS: readonly BellSound[] = BELL_SOUND_IDS;
 
 const DEFAULT_SETTINGS: UserSettings = {
   bellSounds: DEFAULT_BELL_SOUNDS,

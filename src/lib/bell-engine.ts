@@ -1,21 +1,9 @@
 import * as Notifications from 'expo-notifications';
 import { parseTime, toMinutes } from './time-utils';
+import { DEFAULT_BELL_SOUNDS } from '../types';
 import type { BellSound, BellSounds, DaySchedule, Period } from '../types';
 
-const BELL_SOUND_FILES: Record<BellSound, string> = {
-  'school-bell': 'school-bell.wav',
-  'dinner-bell': 'dinner-bell.wav',
-  'chime': 'chime.wav',
-  'sonar-alarm': 'sonar-alarm.wav',
-  'classic-alarm': 'classic-alarm.wav',
-  'melodic-alarm': 'melodic-alarm.wav',
-  'double-beep': 'double-beep.wav',
-  'up-and-down': 'up-and-down.wav',
-  'retro-sms': 'retro-sms.wav',
-  'soft-triple': 'soft-triple.wav',
-  'whistle': 'whistle.wav',
-  'eight-bit': 'eight-bit.wav',
-};
+const bellSoundFile = (sound: BellSound): string => `${sound}.wav`;
 
 export async function requestNotificationPermissions(): Promise<boolean> {
   const { status: existing } = await Notifications.getPermissionsAsync();
@@ -93,12 +81,6 @@ export function computeBellTimes(
   return notifications.sort((a, b) => a.triggerDate.getTime() - b.triggerDate.getTime());
 }
 
-const DEFAULT_BELL_SOUNDS: BellSounds = {
-  start: 'school-bell',
-  warning: 'double-beep',
-  end: 'school-bell',
-};
-
 export async function scheduleBellNotifications(
   days: DaySchedule[],
   warningMinutes: number,
@@ -124,7 +106,7 @@ export async function scheduleBellNotifications(
       content: {
         title: '\uD83D\uDD14 School Bell',
         body: bell.body,
-        sound: BELL_SOUND_FILES[bellSounds[bell.bellType]],
+        sound: bellSoundFile(bellSounds[bell.bellType]),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
