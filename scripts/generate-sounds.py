@@ -19,6 +19,7 @@ def new(dur):
 def partial(buf, start, freq, amp, decay, dur=None, phase=0.0):
     """Exponentially decaying sine partial mixed in at start (seconds)."""
     n0 = int(start * SR)
+    assert n0 < len(buf), f'partial start {start}s is past the buffer end'
     n = min(int(((dur if dur else decay * 7)) * SR), len(buf) - n0)
     w = 2 * math.pi * freq / SR
     for i in range(n):
@@ -28,6 +29,7 @@ def partial(buf, start, freq, amp, decay, dur=None, phase=0.0):
 def noise_burst(buf, start, amp, decay, dur, brightness=0.7):
     """Short filtered-noise strike transient."""
     n0 = int(start * SR)
+    assert n0 < len(buf), f'noise_burst start {start}s is past the buffer end'
     n = min(int(dur * SR), len(buf) - n0)
     prev = 0.0
     for i in range(n):
@@ -70,7 +72,7 @@ def bell_strike(buf, t, f0, amp, ratios, decays, detune=0.004, max_dur=None):
 
 
 def write_wav(name, buf, peak_dbfs=-1.0, fade_out=0.05):
-    nfo = int(fade_out * SR)
+    nfo = min(int(fade_out * SR), len(buf))
     for i in range(nfo):
         buf[-1 - i] *= i / nfo
     peak = max(abs(s) for s in buf) or 1.0
