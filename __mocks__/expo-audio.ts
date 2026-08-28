@@ -1,8 +1,7 @@
 const mockPlayer = {
   play: jest.fn(),
+  replace: jest.fn(),
   release: jest.fn(),
 };
 
-export type AudioPlayer = typeof mockPlayer;
-
-export const createAudioPlayer = jest.fn(() => mockPlayer);
+export const useAudioPlayer = jest.fn(() => mockPlayer);
