@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import Constants from 'expo-constants';
 import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
@@ -86,6 +86,8 @@ export default function SettingsScreen() {
   } = useSettingsStore();
 
   const playerRef = useRef<AudioPlayer | null>(null);
+
+  useEffect(() => () => playerRef.current?.release(), []);
 
   const previewSound = useCallback((id: BellSound) => {
     playerRef.current?.release();

@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
+import { createAudioPlayer } from 'expo-audio';
 import { useSettingsStore } from '../../../src/store/settings-store';
 
 jest.mock('../../../src/lib/bell-engine', () => ({
@@ -70,6 +71,22 @@ describe('SettingsScreen', () => {
 
     const checkmarks = screen.getAllByText('checkmark-circle');
     expect(checkmarks.length).toBe(3);
+  });
+
+  it('previews the sound on selection, releasing the previous player', () => {
+    render(<SettingsScreen />);
+
+    fireEvent.press(screen.getAllByText('Dinner Bell')[0]);
+
+    const player = jest.mocked(createAudioPlayer).mock.results[0].value;
+    expect(createAudioPlayer).toHaveBeenCalledTimes(1);
+    expect(player.play).toHaveBeenCalledTimes(1);
+    expect(player.release).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getAllByText('Chime')[0]);
+
+    expect(createAudioPlayer).toHaveBeenCalledTimes(2);
+    expect(player.release).toHaveBeenCalledTimes(1);
   });
 
   it('shows app version', () => {
