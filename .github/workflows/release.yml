@@ -88,8 +88,6 @@ jobs:
           <dict>
             <key>method</key>
             <string>app-store-connect</string>
-            <key>destination</key>
-            <string>upload</string>
             <key>teamID</key>
             <string>${{ secrets.APPLE_TEAM_ID }}</string>
             <key>signingStyle</key>
@@ -103,18 +101,25 @@ jobs:
           </plist>
           EOF
 
-      # destination=upload makes -exportArchive upload straight to TestFlight,
-      # avoiding Xcode 26's altool (broken ASC app resolution; error 19 / 409).
-      - name: Upload to TestFlight
+      - name: Export IPA
         run: |
           xcodebuild -exportArchive \
             -archivePath $RUNNER_TEMP/CourseBell.xcarchive \
             -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist \
-            -exportPath $RUNNER_TEMP/export \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath $RUNNER_TEMP/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
-            -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+            -exportPath $RUNNER_TEMP/export
+
+      # altool reads the key from API_PRIVATE_KEYS_DIR. xcodebuild's own
+      # destination=upload is not an option here: it ignores -authenticationKey*
+      # for the upload and demands a signed-in Xcode account, which CI has none.
+      - name: Upload to TestFlight
+        env:
+          API_PRIVATE_KEYS_DIR: ${{ runner.temp }}/private_keys
+        run: |
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$RUNNER_TEMP/export/CourseBell.ipa" \
+            --apiKey ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
+            --apiIssuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
 
       - name: Cleanup keychain
         if: always()
