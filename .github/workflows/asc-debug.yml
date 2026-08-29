@@ -16,9 +16,24 @@ jobs:
           ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: |
           pip install --quiet pyjwt cryptography requests
-          echo -n "$APP_STORE_CONNECT_API_KEY" | base64 --decode > /tmp/key.p8
+          echo -n "$APP_STORE_CONNECT_API_KEY" | base64 --decode > /tmp/key.p8 || echo "base64 decode FAILED"
           python3 - << 'EOF'
           import jwt, time, os, requests
+
+          raw = os.environ["APP_STORE_CONNECT_API_KEY"]
+          pem = open("/tmp/key.p8", "rb").read()
+          print("secret length:", len(raw))
+          print("decoded starts with PEM header:", pem.strip().startswith(b"-----BEGIN PRIVATE KEY-----"))
+          print("raw secret itself looks like PEM (i.e. was NOT base64d):", raw.strip().startswith("-----BEGIN"))
+          try:
+              from cryptography.hazmat.primitives.serialization import load_pem_private_key
+              load_pem_private_key(pem, password=None)
+              print("decoded p8 parses as a private key: True")
+          except Exception as e:
+              print("decoded p8 parses as a private key: False —", type(e).__name__)
+          print("KEY_ID length:", len(os.environ["KEY_ID"]), "(expect 10)")
+          iss = os.environ["ISSUER_ID"]
+          print("ISSUER_ID length:", len(iss), "(expect 36, UUID with dashes)")
 
           token = jwt.encode(
               {"iss": os.environ["ISSUER_ID"], "iat": int(time.time()),
@@ -33,7 +48,7 @@ jobs:
               for a in r.json()["data"]:
                   print("  app:", a["id"], a["attributes"]["bundleId"], "-", a["attributes"]["name"])
           else:
-              print(r.text[:2000])
+              print("error body:", r.text.replace("\n", " ")[:1500])
 
           r = requests.get("https://api.appstoreconnect.apple.com/v1/apps/6759270803", headers=h)
           print("GET /v1/apps/6759270803 ->", r.status_code)
