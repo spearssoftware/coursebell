@@ -5,3 +5,5 @@ const mockPlayer = {
 };
 
 export const useAudioPlayer = jest.fn(() => mockPlayer);
+
+export const setAudioModeAsync = jest.fn(() => Promise.resolve());
