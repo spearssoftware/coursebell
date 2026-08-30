@@ -181,4 +181,19 @@ describe('scheduleBellNotifications — custom sounds', () => {
 
     jest.useRealTimers();
   });
+
+  it('marks bells time sensitive so a Focus does not swallow them', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 1, 16, 7, 0, 0));
+
+    await scheduleBellNotifications(makeDays([periods[0]]), 2, false);
+
+    const levels = mockSchedule.mock.calls.map(
+      (call: [{ content: { interruptionLevel?: string } }]) => call[0].content.interruptionLevel,
+    );
+    expect(levels.length).toBeGreaterThan(0);
+    expect(levels.every((l) => l === 'timeSensitive')).toBe(true);
+
+    jest.useRealTimers();
+  });
 });

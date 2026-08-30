@@ -107,6 +107,8 @@ export async function scheduleBellNotifications(
         title: '\uD83D\uDD14 School Bell',
         body: bell.body,
         sound: bellSoundFile(bellSounds[bell.bellType]),
+        // A bell is useless if a Focus swallows it until after the period ends.
+        interruptionLevel: 'timeSensitive',
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
