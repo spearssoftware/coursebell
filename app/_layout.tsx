@@ -3,6 +3,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
+import { setAudioModeAsync } from 'expo-audio';
 import { useScheduleStore } from '../src/store/schedule-store';
 import { useSettingsStore } from '../src/store/settings-store';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
@@ -30,6 +31,13 @@ export default function RootLayout() {
     loadData();
     loadHistory();
     loadSettings();
+    // Otherwise the audio session keeps iOS's default soloAmbient category and
+    // sound previews are muted by the ring/silent switch. Only sets the
+    // category — the session is activated on playback, and the default
+    // mixWithOthers interruption mode leaves other apps' audio alone.
+    setAudioModeAsync({ playsInSilentMode: true }).catch((e) =>
+      console.warn('Failed to set audio mode; sound previews may be silent', e),
+    );
   }, []);
 
   if (!isScheduleLoaded || !isSettingsLoaded) {
