@@ -3,11 +3,6 @@ import { useScheduleStore } from '../../../src/store/schedule-store';
 import { useSettingsStore } from '../../../src/store/settings-store';
 import type { DaySchedule, Period } from '../../../src/types';
 
-jest.mock('../../../src/lib/bell-engine', () => ({
-  scheduleBellNotifications: jest.fn(),
-  requestNotificationPermissions: jest.fn(() => Promise.resolve(true)),
-}));
-
 import TodayScreen from '../index';
 
 const mondayPeriods: Period[] = [

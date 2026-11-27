@@ -6,7 +6,8 @@ import type { BellSound, BellSounds, DaySchedule, Period } from '../types';
 const bellSoundFile = (sound: BellSound): string => `${sound}.wav`;
 
 // Bells are booked days ahead so they still ring when the app isn't opened.
-// A full school day uses ~20 slots, so the cap usually binds before the week ends.
+// A full school day uses ~20 slots, so MAX_PENDING usually binds first and
+// coverage is closer to 3 school days; each foreground rolls the window on.
 const DAYS_AHEAD = 7;
 // iOS keeps only the 64 soonest pending local notifications and drops the rest.
 const MAX_PENDING = 64;
@@ -105,70 +106,70 @@ export function computeUpcomingBells(
   return bells.slice(0, MAX_PENDING);
 }
 
-type RescheduleArgs = Parameters<typeof rescheduleBells>;
+export interface BellScheduleInput {
+  days: DaySchedule[];
+  warningMinutes: number;
+  notificationsEnabled?: boolean;
+  bellSounds?: BellSounds;
+  mutedDate?: string | null;
+}
 
-// One rebuild runs at a time; calls made meanwhile collapse into a single
-// rebuild with the latest arguments, so typing a label doesn't queue one per key.
+// Each rebuild cancels every pending bell before rebooking, so two must never
+// interleave. One runs at a time; calls made meanwhile collapse into a single
+// follow-up rebuild with the latest input.
 let running: Promise<void> | null = null;
-let latest: RescheduleArgs | null = null;
+let latest: BellScheduleInput | null = null;
 
-export function scheduleBellNotifications(
-  days: DaySchedule[],
-  warningMinutes: number,
-  muted?: boolean,
-  bellSounds: BellSounds = DEFAULT_BELL_SOUNDS,
-  mutedDate: string | null = null,
-): Promise<void> {
-  latest = [days, warningMinutes, muted, bellSounds, mutedDate];
+export function scheduleBellNotifications(input: BellScheduleInput): Promise<void> {
+  latest = input;
   running ??= drain();
   return running;
 }
 
 async function drain(): Promise<void> {
-  try {
-    while (latest) {
-      const args = latest;
-      latest = null;
-      try {
-        await rescheduleBells(...args);
-      } catch (e) {
-        console.warn('Failed to schedule bell notifications', e);
-      }
+  while (latest) {
+    const input = latest;
+    latest = null;
+    try {
+      await rescheduleBells(input);
+    } catch (e) {
+      console.warn('Failed to schedule bell notifications', e);
     }
-  } finally {
-    running = null;
   }
+  running = null;
 }
 
-async function rescheduleBells(
-  days: DaySchedule[],
-  warningMinutes: number,
-  muted: boolean | undefined,
-  bellSounds: BellSounds,
-  mutedDate: string | null,
-): Promise<void> {
+async function rescheduleBells({
+  days,
+  warningMinutes,
+  notificationsEnabled = true,
+  bellSounds = DEFAULT_BELL_SOUNDS,
+  mutedDate = null,
+}: BellScheduleInput): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
 
-  if (muted) return;
+  if (!notificationsEnabled) return;
 
   const hasPermission = await requestNotificationPermissions();
   if (!hasPermission) return;
 
   const bells = computeUpcomingBells(days, warningMinutes, new Date(), mutedDate);
 
-  for (const bell of bells) {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: '\uD83D\uDD14 School Bell',
-        body: bell.body,
-        sound: bellSoundFile(bellSounds[bell.bellType]),
-        // A bell is useless if a Focus swallows it until after the period ends.
-        interruptionLevel: 'timeSensitive',
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: bell.triggerDate,
-      },
-    });
-  }
+  await Promise.all(
+    bells.map((bell) =>
+      Notifications.scheduleNotificationAsync({
+        content: {
+          title: '\uD83D\uDD14 School Bell',
+          body: bell.body,
+          sound: bellSoundFile(bellSounds[bell.bellType]),
+          // A bell is useless if a Focus swallows it until after the period ends.
+          interruptionLevel: 'timeSensitive',
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: bell.triggerDate,
+        },
+      }),
+    ),
+  );
 }

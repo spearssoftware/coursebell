@@ -7,6 +7,10 @@ const mockCancel = Notifications.cancelAllScheduledNotificationsAsync as jest.Mo
 const mockGetPerms = Notifications.getPermissionsAsync as jest.Mock;
 const mockRequestPerms = Notifications.requestPermissionsAsync as jest.Mock;
 
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockGetPerms.mockResolvedValue({ status: 'granted' });
@@ -97,7 +101,7 @@ describe('computeBellTimes', () => {
 
 describe('scheduleBellNotifications', () => {
   it('cancels all existing notifications first', async () => {
-    await scheduleBellNotifications(makeDays(periods), 2);
+    await scheduleBellNotifications({ days: makeDays(periods), warningMinutes: 2 });
     expect(mockCancel).toHaveBeenCalledTimes(1);
   });
 
@@ -105,7 +109,7 @@ describe('scheduleBellNotifications', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date(2026, 1, 16, 7, 0, 0));
 
-    await scheduleBellNotifications(makeDays(periods), 2);
+    await scheduleBellNotifications({ days: makeDays(periods), warningMinutes: 2 });
 
     expect(mockSchedule.mock.calls.length).toBeGreaterThan(0);
 
@@ -125,7 +129,7 @@ describe('scheduleBellNotifications', () => {
       periods: [] as Period[],
     }));
 
-    await scheduleBellNotifications(emptyDays, 2);
+    await scheduleBellNotifications({ days: emptyDays, warningMinutes: 2 });
 
     expect(mockCancel).toHaveBeenCalledTimes(1);
     expect(mockSchedule).not.toHaveBeenCalled();
@@ -138,7 +142,7 @@ describe('scheduleBellNotifications', () => {
     mockGetPerms.mockResolvedValue({ status: 'denied' });
     mockRequestPerms.mockResolvedValue({ status: 'denied' });
 
-    await scheduleBellNotifications(makeDays(periods), 2);
+    await scheduleBellNotifications({ days: makeDays(periods), warningMinutes: 2 });
 
     expect(mockCancel).toHaveBeenCalledTimes(1);
     expect(mockSchedule).not.toHaveBeenCalled();
@@ -152,7 +156,7 @@ describe('scheduleBellNotifications — muted', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date(2026, 1, 16, 7, 0, 0));
 
-    await scheduleBellNotifications(makeDays(periods), 2, true);
+    await scheduleBellNotifications({ days: makeDays(periods), warningMinutes: 2, notificationsEnabled: false });
 
     expect(mockCancel).toHaveBeenCalledTimes(1);
     expect(mockSchedule).not.toHaveBeenCalled();
@@ -166,10 +170,10 @@ describe('scheduleBellNotifications — custom sounds', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date(2026, 1, 16, 7, 0, 0));
 
-    await scheduleBellNotifications(makeDays([periods[0]]), 2, false, {
-      start: 'dinner-bell',
-      warning: 'double-beep',
-      end: 'chime',
+    await scheduleBellNotifications({
+      days: makeDays([periods[0]]),
+      warningMinutes: 2,
+      bellSounds: { start: 'dinner-bell', warning: 'double-beep', end: 'chime' },
     });
 
     const sounds = mockSchedule.mock.calls.map(
@@ -186,7 +190,7 @@ describe('scheduleBellNotifications — custom sounds', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date(2026, 1, 16, 7, 0, 0));
 
-    await scheduleBellNotifications(makeDays([periods[0]]), 2, false);
+    await scheduleBellNotifications({ days: makeDays([periods[0]]), warningMinutes: 2 });
 
     const levels = mockSchedule.mock.calls.map(
       (call: [{ content: { interruptionLevel?: string } }]) => call[0].content.interruptionLevel,
@@ -223,19 +227,17 @@ describe('computeUpcomingBells', () => {
   });
 
   it('keeps only the soonest 64 bells', () => {
-    const busy: Period[] = Array.from({ length: 12 }, (_, i) => ({
-      id: `b-${i}`, label: `P${i}`, startTime: `${String(8 + i).padStart(2, '0')}:00`,
-      endTime: `${String(8 + i).padStart(2, '0')}:50`, sortOrder: i,
-      bellAtStart: true, bellAtEnd: true, bellBeforeEnd: true,
-    }));
+    const busy: Period[] = Array.from({ length: 12 }, (_, i) => {
+      const hh = String(8 + i).padStart(2, '0');
+      return { ...periods[0], id: `b-${i}`, label: `P${i}`, startTime: `${hh}:00`, endTime: `${hh}:50`, sortOrder: i };
+    });
     const everyDay = Array.from({ length: 7 }, (_, i) => ({ dayOfWeek: i, periods: busy }));
 
     const bells = computeUpcomingBells(everyDay, 2, new Date(2026, 1, 16, 0, 0, 0));
 
     expect(bells).toHaveLength(64);
-    for (let i = 1; i < bells.length; i++) {
-      expect(bells[i].triggerDate.getTime()).toBeGreaterThan(bells[i - 1].triggerDate.getTime());
-    }
+    const times = bells.map((b) => b.triggerDate.getTime());
+    expect(times).toEqual([...times].sort((a, b) => a - b));
   });
 });
 
@@ -244,10 +246,9 @@ describe('scheduleBellNotifications — overlapping calls', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date(2026, 1, 16, 7, 0, 0));
 
-    const first = scheduleBellNotifications(makeDays(periods), 2);
-    scheduleBellNotifications(makeDays(periods), 3);
-    const last = scheduleBellNotifications(makeDays([periods[0]]), 5);
-    await Promise.all([first, last]);
+    scheduleBellNotifications({ days: makeDays(periods), warningMinutes: 2 });
+    scheduleBellNotifications({ days: makeDays(periods), warningMinutes: 3 });
+    await scheduleBellNotifications({ days: makeDays([periods[0]]), warningMinutes: 5 });
 
     expect(mockCancel).toHaveBeenCalledTimes(2);
     const bodies = mockSchedule.mock.calls.map(
@@ -263,10 +264,9 @@ describe('scheduleBellNotifications — overlapping calls', () => {
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     mockCancel.mockRejectedValueOnce(new Error('boom'));
 
-    await scheduleBellNotifications(makeDays(periods), 2);
-    await scheduleBellNotifications(makeDays(periods), 2);
+    await scheduleBellNotifications({ days: makeDays(periods), warningMinutes: 2 });
+    await scheduleBellNotifications({ days: makeDays(periods), warningMinutes: 2 });
 
     expect(mockCancel).toHaveBeenCalledTimes(2);
-    jest.restoreAllMocks();
   });
 });

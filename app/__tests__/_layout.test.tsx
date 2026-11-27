@@ -59,17 +59,21 @@ describe('RootLayout', () => {
 
     const { days } = useScheduleStore.getState();
     const { bellSounds } = useSettingsStore.getState();
-    expect(mockSchedule).toHaveBeenCalledWith(days, 4, true, bellSounds, '2026-02-16');
+    expect(mockSchedule).toHaveBeenCalledWith({
+      days, warningMinutes: 4, notificationsEnabled: false, bellSounds, mutedDate: '2026-02-16',
+    });
   });
 
-  it('reschedules when the app returns to the foreground, not when it leaves', () => {
+  it('reschedules only when the app returns from the background', () => {
     loadStores(true);
     render(<RootLayout />);
     expect(mockSchedule).toHaveBeenCalledTimes(1);
 
-    emitAppState('background');
+    emitAppState('inactive');
+    emitAppState('active');
     expect(mockSchedule).toHaveBeenCalledTimes(1);
 
+    emitAppState('background');
     emitAppState('active');
     expect(mockSchedule).toHaveBeenCalledTimes(2);
   });
@@ -83,7 +87,7 @@ describe('RootLayout', () => {
 
     expect(mockSchedule).toHaveBeenCalledTimes(3);
     expect(mockSchedule).toHaveBeenLastCalledWith(
-      [{ dayOfWeek: 1, periods: [] }], expect.any(Number), expect.any(Boolean), expect.anything(), '2026-02-17',
+      expect.objectContaining({ days: [{ dayOfWeek: 1, periods: [] }], mutedDate: '2026-02-17' }),
     );
   });
 

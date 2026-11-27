@@ -32,10 +32,14 @@ function BellScheduler() {
 
   useEffect(() => {
     const reschedule = () =>
-      scheduleBellNotifications(days, warningMinutes, !notificationsEnabled, bellSounds, mutedDate);
+      scheduleBellNotifications({ days, warningMinutes, notificationsEnabled, bellSounds, mutedDate });
     reschedule();
+    // Only a real return from background: inactive -> active also fires when
+    // Notification Center or a system alert closes, and nothing changed then.
+    let previous = AppState.currentState;
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') reschedule();
+      if (state === 'active' && previous === 'background') reschedule();
+      previous = state;
     });
     return () => sub.remove();
   }, [days, warningMinutes, bellSounds, notificationsEnabled, mutedDate]);
