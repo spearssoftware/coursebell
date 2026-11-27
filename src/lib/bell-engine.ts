@@ -1,9 +1,14 @@
 import * as Notifications from 'expo-notifications';
-import { parseTime, toMinutes } from './time-utils';
+import { dateKey, parseTime, toMinutes } from './time-utils';
 import { DEFAULT_BELL_SOUNDS } from '../types';
 import type { BellSound, BellSounds, DaySchedule, Period } from '../types';
 
 const bellSoundFile = (sound: BellSound): string => `${sound}.wav`;
+
+// Bells are booked days ahead so they still ring when the app isn't opened.
+const DAYS_AHEAD = 7;
+// iOS keeps only the 64 soonest pending local notifications and drops the rest.
+const MAX_PENDING = 64;
 
 export async function requestNotificationPermissions(): Promise<boolean> {
   const { status: existing } = await Notifications.getPermissionsAsync();
@@ -26,6 +31,7 @@ export function computeBellTimes(
   periods: Period[],
   warningMinutes: number,
   now: Date,
+  day: Date = now,
 ): BellNotification[] {
   const notifications: BellNotification[] = [];
   const nowMs = now.getTime();
@@ -33,7 +39,7 @@ export function computeBellTimes(
   for (const period of periods) {
     if (period.bellAtStart) {
       const { hours, minutes } = parseTime(period.startTime);
-      const d = new Date(now);
+      const d = new Date(day);
       d.setHours(hours, minutes, 0, 0);
       if (d.getTime() > nowMs) {
         notifications.push({
@@ -50,7 +56,7 @@ export function computeBellTimes(
       const endMins = toMinutes(period.endTime);
       const warnMins = endMins - warningMinutes;
       if (warnMins > startMins) {
-        const d = new Date(now);
+        const d = new Date(day);
         d.setHours(Math.floor(warnMins / 60), warnMins % 60, 0, 0);
         if (d.getTime() > nowMs) {
           notifications.push({
@@ -65,7 +71,7 @@ export function computeBellTimes(
 
     if (period.bellAtEnd) {
       const { hours, minutes } = parseTime(period.endTime);
-      const d = new Date(now);
+      const d = new Date(day);
       d.setHours(hours, minutes, 0, 0);
       if (d.getTime() > nowMs) {
         notifications.push({
@@ -81,11 +87,46 @@ export function computeBellTimes(
   return notifications.sort((a, b) => a.triggerDate.getTime() - b.triggerDate.getTime());
 }
 
-export async function scheduleBellNotifications(
+export function computeUpcomingBells(
+  days: DaySchedule[],
+  warningMinutes: number,
+  now: Date,
+  mutedDate: string | null = null,
+): BellNotification[] {
+  const bells: BellNotification[] = [];
+  for (let offset = 0; offset < DAYS_AHEAD; offset++) {
+    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+    if (dateKey(day) === mutedDate) continue;
+    const schedule = days.find((d) => d.dayOfWeek === day.getDay());
+    if (!schedule) continue;
+    bells.push(...computeBellTimes(schedule.periods, warningMinutes, now, day));
+  }
+  return bells.slice(0, MAX_PENDING);
+}
+
+// Serialized so overlapping calls can't interleave their cancel and schedule steps.
+let queue: Promise<void> = Promise.resolve();
+
+export function scheduleBellNotifications(
   days: DaySchedule[],
   warningMinutes: number,
   muted?: boolean,
   bellSounds: BellSounds = DEFAULT_BELL_SOUNDS,
+  mutedDate: string | null = null,
+): Promise<void> {
+  const run = queue.then(() =>
+    rescheduleBells(days, warningMinutes, muted, bellSounds, mutedDate),
+  );
+  queue = run.catch(() => {});
+  return run;
+}
+
+async function rescheduleBells(
+  days: DaySchedule[],
+  warningMinutes: number,
+  muted: boolean | undefined,
+  bellSounds: BellSounds,
+  mutedDate: string | null,
 ): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
 
@@ -94,12 +135,7 @@ export async function scheduleBellNotifications(
   const hasPermission = await requestNotificationPermissions();
   if (!hasPermission) return;
 
-  const now = new Date();
-  const today = now.getDay();
-  const daySchedule = days.find((d) => d.dayOfWeek === today);
-  if (!daySchedule || daySchedule.periods.length === 0) return;
-
-  const bells = computeBellTimes(daySchedule.periods, warningMinutes, now);
+  const bells = computeUpcomingBells(days, warningMinutes, new Date(), mutedDate);
 
   for (const bell of bells) {
     await Notifications.scheduleNotificationAsync({

@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { AppState, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { setAudioModeAsync } from 'expo-audio';
+import { scheduleBellNotifications } from '../src/lib/bell-engine';
 import { useScheduleStore } from '../src/store/schedule-store';
 import { useSettingsStore } from '../src/store/settings-store';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
@@ -26,6 +27,11 @@ export default function RootLayout() {
   const loadSettings = useSettingsStore((s) => s.loadSettings);
   const isSettingsLoaded = useSettingsStore((s) => s.isLoaded);
   const hasCompletedOnboarding = useSettingsStore((s) => s.hasCompletedOnboarding);
+  const days = useScheduleStore((s) => s.days);
+  const warningMinutes = useSettingsStore((s) => s.warningMinutes);
+  const bellSounds = useSettingsStore((s) => s.bellSounds);
+  const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
+  const mutedDate = useSettingsStore((s) => s.mutedDate);
 
   useEffect(() => {
     loadData();
@@ -39,6 +45,21 @@ export default function RootLayout() {
       console.warn('Failed to set audio mode; sound previews may be silent', e),
     );
   }, []);
+
+  // Rebook on every change and whenever the app returns to the foreground, so
+  // the window of booked bells keeps rolling forward without visiting a tab.
+  // Waits for onboarding, which is where the permission prompt is shown.
+  useEffect(() => {
+    if (!isScheduleLoaded || !isSettingsLoaded || !hasCompletedOnboarding) return;
+    const reschedule = () =>
+      scheduleBellNotifications(days, warningMinutes, !notificationsEnabled, bellSounds, mutedDate)
+        .catch((e) => console.warn('Failed to schedule bell notifications', e));
+    reschedule();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') reschedule();
+    });
+    return () => sub.remove();
+  }, [isScheduleLoaded, isSettingsLoaded, hasCompletedOnboarding, days, warningMinutes, bellSounds, notificationsEnabled, mutedDate]);
 
   if (!isScheduleLoaded || !isSettingsLoaded) {
     return (

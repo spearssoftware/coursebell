@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { computeBellTimes, scheduleBellNotifications } from '../bell-engine';
+import { computeBellTimes, computeUpcomingBells, scheduleBellNotifications } from '../bell-engine';
 import type { DaySchedule, Period } from '../../types';
 
 const mockSchedule = Notifications.scheduleNotificationAsync as jest.Mock;
@@ -119,7 +119,7 @@ describe('scheduleBellNotifications', () => {
     jest.useRealTimers();
   });
 
-  it('does nothing when no schedule for today', async () => {
+  it('does nothing when no day has periods', async () => {
     const emptyDays = Array.from({ length: 7 }, (_, i) => ({
       dayOfWeek: i,
       periods: [] as Period[],
@@ -195,5 +195,46 @@ describe('scheduleBellNotifications — custom sounds', () => {
     expect(levels.every((l) => l === 'timeSensitive')).toBe(true);
 
     jest.useRealTimers();
+  });
+});
+
+describe('computeUpcomingBells', () => {
+  // Monday 2026-02-16, after the last bell of the day.
+  const mondayEvening = new Date(2026, 1, 16, 18, 0, 0);
+  const weekdays: DaySchedule[] = Array.from({ length: 7 }, (_, i) => ({
+    dayOfWeek: i,
+    periods: i >= 1 && i <= 5 ? [periods[0]] : [],
+  }));
+
+  it('books following days when today has no bells left', () => {
+    const bells = computeUpcomingBells(weekdays, 2, mondayEvening);
+
+    const dates = new Set(bells.map((b) => b.triggerDate.getDate()));
+    expect([...dates]).toEqual([17, 18, 19, 20]);
+    expect(bells[0].triggerDate).toEqual(new Date(2026, 1, 17, 8, 0, 0));
+  });
+
+  it('skips only the muted date', () => {
+    const bells = computeUpcomingBells(weekdays, 2, mondayEvening, '2026-02-17');
+
+    const dates = new Set(bells.map((b) => b.triggerDate.getDate()));
+    expect(dates.has(17)).toBe(false);
+    expect(dates.has(18)).toBe(true);
+  });
+
+  it('keeps only the soonest 64 bells', () => {
+    const busy: Period[] = Array.from({ length: 12 }, (_, i) => ({
+      id: `b-${i}`, label: `P${i}`, startTime: `${String(8 + i).padStart(2, '0')}:00`,
+      endTime: `${String(8 + i).padStart(2, '0')}:50`, sortOrder: i,
+      bellAtStart: true, bellAtEnd: true, bellBeforeEnd: true,
+    }));
+    const everyDay = Array.from({ length: 7 }, (_, i) => ({ dayOfWeek: i, periods: busy }));
+
+    const bells = computeUpcomingBells(everyDay, 2, new Date(2026, 1, 16, 0, 0, 0));
+
+    expect(bells).toHaveLength(64);
+    for (let i = 1; i < bells.length; i++) {
+      expect(bells[i].triggerDate.getTime()).toBeGreaterThan(bells[i - 1].triggerDate.getTime());
+    }
   });
 });

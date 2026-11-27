@@ -8,7 +8,6 @@ import { useSettingsStore } from '../../src/store/settings-store';
 import { CountdownTimer } from '../../src/components/CountdownTimer';
 import { PeriodRow } from '../../src/components/PeriodRow';
 import { EmptyState } from '../../src/components/EmptyState';
-import { scheduleBellNotifications } from '../../src/lib/bell-engine';
 import { getCurrentTime, isTimeBefore, isTimeAfterOrEqual, formatTimeDisplay } from '../../src/lib/time-utils';
 import { colors, spacing, borderRadius, fontSize } from '../../src/theme';
 import type { Period } from '../../src/types';
@@ -55,7 +54,6 @@ function getNextBellTime(
 export default function TodayScreen() {
   const { days, isLoaded } = useScheduleStore();
   const warningMinutes = useSettingsStore((s) => s.warningMinutes);
-  const bellSounds = useSettingsStore((s) => s.bellSounds);
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
   const isMutedToday = useSettingsStore((s) => s.isMutedToday());
   const toggleMuteToday = useSettingsStore((s) => s.toggleMuteToday);
@@ -70,9 +68,6 @@ export default function TodayScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (isLoaded) {
-        scheduleBellNotifications(days, warningMinutes, muted, bellSounds);
-      }
       if (notificationsEnabled) {
         Notifications.getPermissionsAsync().then(({ status }) => {
           setOsPermissionDenied(status !== 'granted');
@@ -80,7 +75,7 @@ export default function TodayScreen() {
       } else {
         setOsPermissionDenied(false);
       }
-    }, [isLoaded, days, warningMinutes, muted, bellSounds, notificationsEnabled]),
+    }, [notificationsEnabled]),
   );
 
   const today = new Date().getDay();
