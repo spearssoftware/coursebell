@@ -113,6 +113,18 @@ describe('RootLayout', () => {
     expect(mockSchedule).toHaveBeenCalledTimes(3);
   });
 
+  it('re-arms the midnight timer when the schedule changes', () => {
+    jest.useFakeTimers({ now: new Date(2026, 1, 16, 12, 0, 0) });
+    loadStores(true);
+    render(<RootLayout />);
+
+    act(() => useScheduleStore.setState({ days: [{ dayOfWeek: 1, periods: [] }] }));
+    expect(mockSchedule).toHaveBeenCalledTimes(2);
+
+    act(() => jest.advanceTimersByTime(12 * 60 * 60 * 1000));
+    expect(mockSchedule).toHaveBeenCalledTimes(3);
+  });
+
   it('registers the background refresh task once onboarded', () => {
     loadStores(true);
     render(<RootLayout />);

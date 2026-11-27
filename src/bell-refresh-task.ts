@@ -1,4 +1,5 @@
 import * as BackgroundTask from 'expo-background-task';
+import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import { scheduleBellNotifications } from './lib/bell-engine';
 import { useScheduleStore } from './store/schedule-store';
@@ -6,9 +7,10 @@ import { useSettingsStore } from './store/settings-store';
 
 export const BELL_REFRESH_TASK = 'bell-refresh';
 
-// iOS treats this as a lower bound and runs the task when it sees fit, often
-// overnight; asking more often than the ~3 school days of booked bells is
-// what keeps the window from running dry when the app isn't opened.
+// Only a lower bound: iOS runs processing tasks when it sees fit (usually idle,
+// on power and network, and less for rarely used apps), so this is a best-effort
+// top-up of the ~3 school days of booked bells, not a guarantee. Changing it
+// does not reach installs that already registered the task.
 const REFRESH_INTERVAL_MINUTES = 6 * 60;
 
 // The task can run in a process iOS launched just for it, before the root
@@ -26,26 +28,24 @@ export async function refreshBellsFromStorage(): Promise<void> {
   const { hasCompletedOnboarding, warningMinutes, notificationsEnabled, bellSounds, mutedDate } =
     useSettingsStore.getState();
   if (!hasCompletedOnboarding) return;
+  // A permission prompt can't be answered from the background; leave asking to
+  // the foreground scheduler.
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') return;
 
   await scheduleBellNotifications({ days, warningMinutes, notificationsEnabled, bellSounds, mutedDate });
 }
 
 // Must run at module load so the task exists when iOS launches the app for it.
+// scheduleBellNotifications logs and swallows its own failures.
 TaskManager.defineTask(BELL_REFRESH_TASK, async () => {
-  try {
-    await refreshBellsFromStorage();
-    return BackgroundTask.BackgroundTaskResult.Success;
-  } catch (e) {
-    console.warn('Background bell refresh failed', e);
-    return BackgroundTask.BackgroundTaskResult.Failed;
-  }
+  await refreshBellsFromStorage();
+  return BackgroundTask.BackgroundTaskResult.Success;
 });
 
+// registerTaskAsync itself skips simulators and already-registered tasks.
 export async function registerBellRefreshTask(): Promise<void> {
   try {
-    const status = await BackgroundTask.getStatusAsync();
-    if (status !== BackgroundTask.BackgroundTaskStatus.Available) return;
-    if (await TaskManager.isTaskRegisteredAsync(BELL_REFRESH_TASK)) return;
     await BackgroundTask.registerTaskAsync(BELL_REFRESH_TASK, {
       minimumInterval: REFRESH_INTERVAL_MINUTES,
     });
