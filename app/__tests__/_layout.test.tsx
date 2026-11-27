@@ -10,7 +10,12 @@ jest.mock('../../src/lib/bell-engine', () => ({
   requestNotificationPermissions: jest.fn(() => Promise.resolve(true)),
 }));
 
+jest.mock('../../src/bell-refresh-task', () => ({
+  registerBellRefreshTask: jest.fn(() => Promise.resolve()),
+}));
+
 import RootLayout from '../_layout';
+import { registerBellRefreshTask } from '../../src/bell-refresh-task';
 
 const mockSchedule = scheduleBellNotifications as jest.Mock;
 const initialSchedule = useScheduleStore.getState();
@@ -38,6 +43,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  jest.useRealTimers();
   jest.restoreAllMocks();
   useScheduleStore.setState(initialSchedule, true);
   useSettingsStore.setState(initialSettings, true);
@@ -91,11 +97,35 @@ describe('RootLayout', () => {
     );
   });
 
+  it('reschedules at each local midnight while the app stays open', () => {
+    jest.useFakeTimers({ now: new Date(2026, 1, 16, 23, 0, 0) });
+    loadStores(true);
+    render(<RootLayout />);
+    expect(mockSchedule).toHaveBeenCalledTimes(1);
+
+    act(() => jest.advanceTimersByTime(60 * 60 * 1000 - 1));
+    expect(mockSchedule).toHaveBeenCalledTimes(1);
+
+    act(() => jest.advanceTimersByTime(1));
+    expect(mockSchedule).toHaveBeenCalledTimes(2);
+
+    act(() => jest.advanceTimersByTime(24 * 60 * 60 * 1000));
+    expect(mockSchedule).toHaveBeenCalledTimes(3);
+  });
+
+  it('registers the background refresh task once onboarded', () => {
+    loadStores(true);
+    render(<RootLayout />);
+
+    expect(registerBellRefreshTask).toHaveBeenCalledTimes(1);
+  });
+
   it('does not schedule before onboarding finishes', () => {
     loadStores(false);
 
     render(<RootLayout />);
 
     expect(mockSchedule).not.toHaveBeenCalled();
+    expect(registerBellRefreshTask).not.toHaveBeenCalled();
   });
 });

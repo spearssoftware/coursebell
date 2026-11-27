@@ -1,4 +1,5 @@
 import {
+  msUntilNextMidnight,
   parseTime,
   toMinutes,
   isTimeBefore,
@@ -146,5 +147,16 @@ describe('isValidTime', () => {
     expect(isValidTime('')).toBe(false);
     expect(isValidTime('12')).toBe(false);
     expect(isValidTime('12:5')).toBe(false);
+  });
+});
+
+describe('msUntilNextMidnight', () => {
+  it('counts down to the start of the next local day', () => {
+    expect(msUntilNextMidnight(new Date(2026, 1, 16, 23, 59, 30))).toBe(30_000);
+    expect(msUntilNextMidnight(new Date(2026, 1, 16, 12, 0, 0))).toBe(12 * 60 * 60 * 1000);
+  });
+
+  it('waits a full day when called exactly at midnight', () => {
+    expect(msUntilNextMidnight(new Date(2026, 1, 17, 0, 0, 0))).toBe(24 * 60 * 60 * 1000);
   });
 });

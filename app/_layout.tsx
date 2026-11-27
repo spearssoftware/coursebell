@@ -5,6 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { setAudioModeAsync } from 'expo-audio';
 import { scheduleBellNotifications } from '../src/lib/bell-engine';
+import { msUntilNextMidnight } from '../src/lib/time-utils';
+import { registerBellRefreshTask } from '../src/bell-refresh-task';
 import { useScheduleStore } from '../src/store/schedule-store';
 import { useSettingsStore } from '../src/store/settings-store';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
@@ -20,8 +22,10 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Rebooks on every change and whenever the app returns to the foreground, so
-// the window of booked bells keeps rolling forward without visiting a tab.
+// Rebooks on every change, whenever the app returns to the foreground, and at
+// each local midnight while it stays open (a classroom display may never
+// leave the foreground), so the window of booked bells keeps rolling forward.
+// A background task rolls it forward while the app isn't opened at all.
 // A separate component so schedule edits don't re-render the whole Stack.
 function BellScheduler() {
   const days = useScheduleStore((s) => s.days);
@@ -29,6 +33,10 @@ function BellScheduler() {
   const bellSounds = useSettingsStore((s) => s.bellSounds);
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
   const mutedDate = useSettingsStore((s) => s.mutedDate);
+
+  useEffect(() => {
+    registerBellRefreshTask();
+  }, []);
 
   useEffect(() => {
     const reschedule = () =>
@@ -41,7 +49,19 @@ function BellScheduler() {
       if (state === 'active' && previous === 'background') reschedule();
       previous = state;
     });
-    return () => sub.remove();
+    // Timers pause while the app is suspended; a late fire just rebooks again.
+    let midnight: ReturnType<typeof setTimeout>;
+    const armMidnight = () => {
+      midnight = setTimeout(() => {
+        reschedule();
+        armMidnight();
+      }, msUntilNextMidnight());
+    };
+    armMidnight();
+    return () => {
+      sub.remove();
+      clearTimeout(midnight);
+    };
   }, [days, warningMinutes, bellSounds, notificationsEnabled, mutedDate]);
 
   return null;
