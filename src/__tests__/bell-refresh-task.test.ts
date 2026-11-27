@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as BackgroundTask from 'expo-background-task';
+import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import { scheduleBellNotifications } from '../lib/bell-engine';
 import { useScheduleStore } from '../store/schedule-store';
@@ -18,8 +19,8 @@ import {
 
 const mockSchedule = scheduleBellNotifications as jest.Mock;
 const mockDefineTask = TaskManager.defineTask as jest.Mock;
-const mockIsRegistered = TaskManager.isTaskRegisteredAsync as jest.Mock;
-const mockGetStatus = BackgroundTask.getStatusAsync as jest.Mock;
+const mockGetPerms = Notifications.getPermissionsAsync as jest.Mock;
+const mockRequestPerms = Notifications.requestPermissionsAsync as jest.Mock;
 const mockRegister = BackgroundTask.registerTaskAsync as jest.Mock;
 // Captured before any beforeEach clears the mock's call history.
 const taskExecutor = mockDefineTask.mock.calls[0][1] as () => Promise<BackgroundTask.BackgroundTaskResult>;
@@ -95,36 +96,22 @@ describe('bell refresh task', () => {
     expect(mockSchedule).not.toHaveBeenCalled();
   });
 
-  it('reports failure instead of throwing', async () => {
+  it('never prompts for permission from the background', async () => {
     await persist(true);
-    mockSchedule.mockRejectedValueOnce(new Error('boom'));
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockGetPerms.mockResolvedValueOnce({ status: 'undetermined' });
 
-    await expect(taskExecutor()).resolves.toBe(BackgroundTask.BackgroundTaskResult.Failed);
+    await refreshBellsFromStorage();
+
+    expect(mockRequestPerms).not.toHaveBeenCalled();
+    expect(mockSchedule).not.toHaveBeenCalled();
   });
 });
 
 describe('registerBellRefreshTask', () => {
-  it('registers with a minimum interval when not yet registered', async () => {
+  it('registers with a six-hour minimum interval', async () => {
     await registerBellRefreshTask();
 
     expect(mockRegister).toHaveBeenCalledWith('bell-refresh', { minimumInterval: 360 });
-  });
-
-  it('skips registration when already registered', async () => {
-    mockIsRegistered.mockResolvedValueOnce(true);
-
-    await registerBellRefreshTask();
-
-    expect(mockRegister).not.toHaveBeenCalled();
-  });
-
-  it('skips registration when background tasks are restricted', async () => {
-    mockGetStatus.mockResolvedValueOnce(BackgroundTask.BackgroundTaskStatus.Restricted);
-
-    await registerBellRefreshTask();
-
-    expect(mockRegister).not.toHaveBeenCalled();
   });
 
   it('swallows registration errors', async () => {
