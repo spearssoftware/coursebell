@@ -155,7 +155,9 @@ async function rescheduleBells({
 
   const bells = computeUpcomingBells(days, warningMinutes, new Date(), mutedDate);
 
-  await Promise.all(
+  // allSettled, not all: a rebuild must not finish while its bookings are still
+  // in flight, or the next rebuild's cancel could land before them.
+  const results = await Promise.allSettled(
     bells.map((bell) =>
       Notifications.scheduleNotificationAsync({
         content: {
@@ -172,4 +174,6 @@ async function rescheduleBells({
       }),
     ),
   );
+  const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
+  if (failed) throw failed.reason;
 }

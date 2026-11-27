@@ -260,6 +260,25 @@ describe('scheduleBellNotifications — overlapping calls', () => {
     jest.useRealTimers();
   });
 
+  it('waits for every booking before the next rebuild cancels', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const events: string[] = [];
+    mockSchedule
+      .mockImplementationOnce(() => Promise.reject(new Error('boom')))
+      .mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => { events.push('booked'); resolve('id'); }, 5)),
+      );
+    mockCancel.mockImplementation(() => { events.push('cancel'); return Promise.resolve(); });
+
+    const days = makeDays([periods[0]]).map((d) => ({ ...d, periods: [periods[0]] }));
+    scheduleBellNotifications({ days, warningMinutes: 2 });
+    await scheduleBellNotifications({ days, warningMinutes: 2 });
+
+    const secondCancel = events.lastIndexOf('cancel');
+    expect(events.indexOf('booked')).toBeLessThan(secondCancel);
+    expect(events.slice(1, secondCancel).every((e) => e === 'booked')).toBe(true);
+  });
+
   it('keeps working after a failed rebuild', async () => {
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     mockCancel.mockRejectedValueOnce(new Error('boom'));
@@ -270,3 +289,4 @@ describe('scheduleBellNotifications — overlapping calls', () => {
     expect(mockCancel).toHaveBeenCalledTimes(2);
   });
 });
+
