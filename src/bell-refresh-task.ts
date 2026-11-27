@@ -5,17 +5,16 @@ import { scheduleBellNotifications } from './lib/bell-engine';
 import { useScheduleStore } from './store/schedule-store';
 import { useSettingsStore } from './store/settings-store';
 
-export const BELL_REFRESH_TASK = 'bell-refresh';
+const BELL_REFRESH_TASK = 'bell-refresh';
 
 // Only a lower bound: iOS runs processing tasks when it sees fit (usually idle,
 // on power and network, and less for rarely used apps), so this is a best-effort
-// top-up of the ~3 school days of booked bells, not a guarantee. Changing it
-// does not reach installs that already registered the task.
+// top-up of the booked window, not a guarantee. Changing it does not reach
+// installs that already registered the task.
 const REFRESH_INTERVAL_MINUTES = 6 * 60;
 
 // The task can run in a process iOS launched just for it, before the root
 // layout has loaded the stores, so load them here when that hasn't happened.
-// When the app was already running, the stores already match storage.
 export async function refreshBellsFromStorage(): Promise<void> {
   const schedule = useScheduleStore.getState();
   const settings = useSettingsStore.getState();

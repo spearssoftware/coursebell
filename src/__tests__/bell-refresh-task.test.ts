@@ -11,11 +11,7 @@ jest.mock('../lib/bell-engine', () => ({
   scheduleBellNotifications: jest.fn(() => Promise.resolve()),
 }));
 
-import {
-  BELL_REFRESH_TASK,
-  refreshBellsFromStorage,
-  registerBellRefreshTask,
-} from '../bell-refresh-task';
+import { refreshBellsFromStorage, registerBellRefreshTask } from '../bell-refresh-task';
 
 const mockSchedule = scheduleBellNotifications as jest.Mock;
 const mockDefineTask = TaskManager.defineTask as jest.Mock;
@@ -23,7 +19,10 @@ const mockGetPerms = Notifications.getPermissionsAsync as jest.Mock;
 const mockRequestPerms = Notifications.requestPermissionsAsync as jest.Mock;
 const mockRegister = BackgroundTask.registerTaskAsync as jest.Mock;
 // Captured before any beforeEach clears the mock's call history.
-const taskExecutor = mockDefineTask.mock.calls[0][1] as () => Promise<BackgroundTask.BackgroundTaskResult>;
+const [taskName, taskExecutor] = mockDefineTask.mock.calls[0] as [
+  string,
+  () => Promise<BackgroundTask.BackgroundTaskResult>,
+];
 
 const initialSchedule = useScheduleStore.getState();
 const initialSettings = useSettingsStore.getState();
@@ -58,8 +57,8 @@ afterEach(() => {
 });
 
 describe('bell refresh task', () => {
-  it('is defined at module load under its task name', () => {
-    expect(BELL_REFRESH_TASK).toBe('bell-refresh');
+  it('is defined at module load', () => {
+    expect(taskName).toBe('bell-refresh');
     expect(taskExecutor).toBeInstanceOf(Function);
   });
 
