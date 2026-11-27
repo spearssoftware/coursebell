@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { AppState, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { setAudioModeAsync } from 'expo-audio';
+import { scheduleBellNotifications } from '../src/lib/bell-engine';
 import { useScheduleStore } from '../src/store/schedule-store';
 import { useSettingsStore } from '../src/store/settings-store';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
@@ -18,6 +19,33 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+// Rebooks on every change and whenever the app returns to the foreground, so
+// the window of booked bells keeps rolling forward without visiting a tab.
+// A separate component so schedule edits don't re-render the whole Stack.
+function BellScheduler() {
+  const days = useScheduleStore((s) => s.days);
+  const warningMinutes = useSettingsStore((s) => s.warningMinutes);
+  const bellSounds = useSettingsStore((s) => s.bellSounds);
+  const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
+  const mutedDate = useSettingsStore((s) => s.mutedDate);
+
+  useEffect(() => {
+    const reschedule = () =>
+      scheduleBellNotifications({ days, warningMinutes, notificationsEnabled, bellSounds, mutedDate });
+    reschedule();
+    // Only a real return from background: inactive -> active also fires when
+    // Notification Center or a system alert closes, and nothing changed then.
+    let previous = AppState.currentState;
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && previous === 'background') reschedule();
+      previous = state;
+    });
+    return () => sub.remove();
+  }, [days, warningMinutes, bellSounds, notificationsEnabled, mutedDate]);
+
+  return null;
+}
 
 export default function RootLayout() {
   const loadData = useScheduleStore((s) => s.loadData);
@@ -51,6 +79,7 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="dark" />
+      {hasCompletedOnboarding && <BellScheduler />}
       <ErrorBoundary>
         <Stack
           screenOptions={{

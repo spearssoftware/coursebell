@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { dateKey } from '../lib/time-utils';
 import { BELL_SOUND_IDS, DEFAULT_BELL_SOUNDS } from '../types';
 import type { BellSound, BellSounds, UserSettings } from '../types';
 
@@ -17,8 +18,7 @@ const DEFAULT_SETTINGS: UserSettings = {
 };
 
 function todayDateStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return dateKey(new Date());
 }
 
 type BellType = keyof BellSounds;

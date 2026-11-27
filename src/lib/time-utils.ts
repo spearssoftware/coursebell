@@ -63,3 +63,8 @@ export function isValidTime(time: string): boolean {
   const m = parseInt(match[2], 10);
   return h >= 0 && h <= 23 && m >= 0 && m <= 59;
 }
+
+/** Local calendar date as YYYY-MM-DD. */
+export function dateKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}

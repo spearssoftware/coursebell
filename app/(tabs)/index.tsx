@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { AppState, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,7 +8,6 @@ import { useSettingsStore } from '../../src/store/settings-store';
 import { CountdownTimer } from '../../src/components/CountdownTimer';
 import { PeriodRow } from '../../src/components/PeriodRow';
 import { EmptyState } from '../../src/components/EmptyState';
-import { scheduleBellNotifications } from '../../src/lib/bell-engine';
 import { getCurrentTime, isTimeBefore, isTimeAfterOrEqual, formatTimeDisplay } from '../../src/lib/time-utils';
 import { colors, spacing, borderRadius, fontSize } from '../../src/theme';
 import type { Period } from '../../src/types';
@@ -55,7 +54,6 @@ function getNextBellTime(
 export default function TodayScreen() {
   const { days, isLoaded } = useScheduleStore();
   const warningMinutes = useSettingsStore((s) => s.warningMinutes);
-  const bellSounds = useSettingsStore((s) => s.bellSounds);
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
   const isMutedToday = useSettingsStore((s) => s.isMutedToday());
   const toggleMuteToday = useSettingsStore((s) => s.toggleMuteToday);
@@ -68,19 +66,23 @@ export default function TodayScreen() {
     return () => clearInterval(interval);
   }, []);
 
+  // Re-checked on foreground too: returning from iOS Settings doesn't refocus the tab.
   useFocusEffect(
     useCallback(() => {
-      if (isLoaded) {
-        scheduleBellNotifications(days, warningMinutes, muted, bellSounds);
+      if (!notificationsEnabled) {
+        setOsPermissionDenied(false);
+        return;
       }
-      if (notificationsEnabled) {
+      const check = () =>
         Notifications.getPermissionsAsync().then(({ status }) => {
           setOsPermissionDenied(status !== 'granted');
         });
-      } else {
-        setOsPermissionDenied(false);
-      }
-    }, [isLoaded, days, warningMinutes, muted, bellSounds, notificationsEnabled]),
+      check();
+      const sub = AppState.addEventListener('change', (state) => {
+        if (state === 'active') check();
+      });
+      return () => sub.remove();
+    }, [notificationsEnabled]),
   );
 
   const today = new Date().getDay();
