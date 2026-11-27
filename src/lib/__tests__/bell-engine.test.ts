@@ -238,3 +238,35 @@ describe('computeUpcomingBells', () => {
     }
   });
 });
+
+describe('scheduleBellNotifications — overlapping calls', () => {
+  it('collapses calls made during a rebuild into one rebuild with the latest arguments', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 1, 16, 7, 0, 0));
+
+    const first = scheduleBellNotifications(makeDays(periods), 2);
+    scheduleBellNotifications(makeDays(periods), 3);
+    const last = scheduleBellNotifications(makeDays([periods[0]]), 5);
+    await Promise.all([first, last]);
+
+    expect(mockCancel).toHaveBeenCalledTimes(2);
+    const bodies = mockSchedule.mock.calls.map(
+      (call: [{ content: { body: string } }]) => call[0].content.body,
+    );
+    expect(bodies.some((b) => b.startsWith('3 minutes'))).toBe(false);
+    expect(bodies).toContain('5 minutes left in Period 1');
+
+    jest.useRealTimers();
+  });
+
+  it('keeps working after a failed rebuild', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockCancel.mockRejectedValueOnce(new Error('boom'));
+
+    await scheduleBellNotifications(makeDays(periods), 2);
+    await scheduleBellNotifications(makeDays(periods), 2);
+
+    expect(mockCancel).toHaveBeenCalledTimes(2);
+    jest.restoreAllMocks();
+  });
+});

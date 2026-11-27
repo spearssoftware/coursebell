@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { AppState, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
@@ -66,15 +66,22 @@ export default function TodayScreen() {
     return () => clearInterval(interval);
   }, []);
 
+  // Re-checked on foreground too: returning from iOS Settings doesn't refocus the tab.
   useFocusEffect(
     useCallback(() => {
-      if (notificationsEnabled) {
+      if (!notificationsEnabled) {
+        setOsPermissionDenied(false);
+        return;
+      }
+      const check = () =>
         Notifications.getPermissionsAsync().then(({ status }) => {
           setOsPermissionDenied(status !== 'granted');
         });
-      } else {
-        setOsPermissionDenied(false);
-      }
+      check();
+      const sub = AppState.addEventListener('change', (state) => {
+        if (state === 'active') check();
+      });
+      return () => sub.remove();
     }, [notificationsEnabled]),
   );
 

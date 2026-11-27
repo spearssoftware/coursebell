@@ -20,6 +20,29 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// Rebooks on every change and whenever the app returns to the foreground, so
+// the window of booked bells keeps rolling forward without visiting a tab.
+// A separate component so schedule edits don't re-render the whole Stack.
+function BellScheduler() {
+  const days = useScheduleStore((s) => s.days);
+  const warningMinutes = useSettingsStore((s) => s.warningMinutes);
+  const bellSounds = useSettingsStore((s) => s.bellSounds);
+  const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
+  const mutedDate = useSettingsStore((s) => s.mutedDate);
+
+  useEffect(() => {
+    const reschedule = () =>
+      scheduleBellNotifications(days, warningMinutes, !notificationsEnabled, bellSounds, mutedDate);
+    reschedule();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') reschedule();
+    });
+    return () => sub.remove();
+  }, [days, warningMinutes, bellSounds, notificationsEnabled, mutedDate]);
+
+  return null;
+}
+
 export default function RootLayout() {
   const loadData = useScheduleStore((s) => s.loadData);
   const loadHistory = useScheduleStore((s) => s.loadHistory);
@@ -27,11 +50,6 @@ export default function RootLayout() {
   const loadSettings = useSettingsStore((s) => s.loadSettings);
   const isSettingsLoaded = useSettingsStore((s) => s.isLoaded);
   const hasCompletedOnboarding = useSettingsStore((s) => s.hasCompletedOnboarding);
-  const days = useScheduleStore((s) => s.days);
-  const warningMinutes = useSettingsStore((s) => s.warningMinutes);
-  const bellSounds = useSettingsStore((s) => s.bellSounds);
-  const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
-  const mutedDate = useSettingsStore((s) => s.mutedDate);
 
   useEffect(() => {
     loadData();
@@ -46,21 +64,6 @@ export default function RootLayout() {
     );
   }, []);
 
-  // Rebook on every change and whenever the app returns to the foreground, so
-  // the window of booked bells keeps rolling forward without visiting a tab.
-  // Waits for onboarding, which is where the permission prompt is shown.
-  useEffect(() => {
-    if (!isScheduleLoaded || !isSettingsLoaded || !hasCompletedOnboarding) return;
-    const reschedule = () =>
-      scheduleBellNotifications(days, warningMinutes, !notificationsEnabled, bellSounds, mutedDate)
-        .catch((e) => console.warn('Failed to schedule bell notifications', e));
-    reschedule();
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') reschedule();
-    });
-    return () => sub.remove();
-  }, [isScheduleLoaded, isSettingsLoaded, hasCompletedOnboarding, days, warningMinutes, bellSounds, notificationsEnabled, mutedDate]);
-
   if (!isScheduleLoaded || !isSettingsLoaded) {
     return (
       <View style={styles.loading}>
@@ -72,6 +75,7 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="dark" />
+      {hasCompletedOnboarding && <BellScheduler />}
       <ErrorBoundary>
         <Stack
           screenOptions={{

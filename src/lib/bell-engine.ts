@@ -6,6 +6,7 @@ import type { BellSound, BellSounds, DaySchedule, Period } from '../types';
 const bellSoundFile = (sound: BellSound): string => `${sound}.wav`;
 
 // Bells are booked days ahead so they still ring when the app isn't opened.
+// A full school day uses ~20 slots, so the cap usually binds before the week ends.
 const DAYS_AHEAD = 7;
 // iOS keeps only the 64 soonest pending local notifications and drops the rest.
 const MAX_PENDING = 64;
@@ -104,8 +105,12 @@ export function computeUpcomingBells(
   return bells.slice(0, MAX_PENDING);
 }
 
-// Serialized so overlapping calls can't interleave their cancel and schedule steps.
-let queue: Promise<void> = Promise.resolve();
+type RescheduleArgs = Parameters<typeof rescheduleBells>;
+
+// One rebuild runs at a time; calls made meanwhile collapse into a single
+// rebuild with the latest arguments, so typing a label doesn't queue one per key.
+let running: Promise<void> | null = null;
+let latest: RescheduleArgs | null = null;
 
 export function scheduleBellNotifications(
   days: DaySchedule[],
@@ -114,11 +119,25 @@ export function scheduleBellNotifications(
   bellSounds: BellSounds = DEFAULT_BELL_SOUNDS,
   mutedDate: string | null = null,
 ): Promise<void> {
-  const run = queue.then(() =>
-    rescheduleBells(days, warningMinutes, muted, bellSounds, mutedDate),
-  );
-  queue = run.catch(() => {});
-  return run;
+  latest = [days, warningMinutes, muted, bellSounds, mutedDate];
+  running ??= drain();
+  return running;
+}
+
+async function drain(): Promise<void> {
+  try {
+    while (latest) {
+      const args = latest;
+      latest = null;
+      try {
+        await rescheduleBells(...args);
+      } catch (e) {
+        console.warn('Failed to schedule bell notifications', e);
+      }
+    }
+  } finally {
+    running = null;
+  }
 }
 
 async function rescheduleBells(
