@@ -113,6 +113,24 @@ describe('RootLayout', () => {
     expect(mockSchedule).toHaveBeenCalledTimes(3);
   });
 
+  it('rebooks once when the app returns after a midnight it slept through', () => {
+    jest.useFakeTimers({ now: new Date(2026, 1, 16, 22, 0, 0) });
+    loadStores(true);
+    render(<RootLayout />);
+    emitAppState('background');
+
+    // Suspended: the clock moves on but the midnight timer never fired.
+    jest.setSystemTime(new Date(2026, 1, 17, 7, 0, 0));
+    emitAppState('active');
+    expect(mockSchedule).toHaveBeenCalledTimes(2);
+
+    act(() => jest.advanceTimersByTime(2 * 60 * 60 * 1000));
+    expect(mockSchedule).toHaveBeenCalledTimes(2);
+
+    act(() => jest.advanceTimersByTime(15 * 60 * 60 * 1000));
+    expect(mockSchedule).toHaveBeenCalledTimes(3);
+  });
+
   it('re-arms the midnight timer when the schedule changes', () => {
     jest.useFakeTimers({ now: new Date(2026, 1, 16, 12, 0, 0) });
     loadStores(true);

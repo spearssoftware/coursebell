@@ -39,8 +39,14 @@ function BellScheduler() {
   }, []);
 
   useEffect(() => {
-    const reschedule = () =>
+    // Every rebook re-aims the midnight timer, so a timer left overdue by a
+    // suspension is dropped when the app returns rather than rebooking again.
+    let midnight: ReturnType<typeof setTimeout> | undefined;
+    const reschedule = () => {
+      clearTimeout(midnight);
+      midnight = setTimeout(reschedule, msUntilNextMidnight());
       scheduleBellNotifications({ days, warningMinutes, notificationsEnabled, bellSounds, mutedDate });
+    };
     reschedule();
     // Only a real return from background: inactive -> active also fires when
     // Notification Center or a system alert closes, and nothing changed then.
@@ -49,15 +55,6 @@ function BellScheduler() {
       if (state === 'active' && previous === 'background') reschedule();
       previous = state;
     });
-    // Timers pause while the app is suspended; a late fire just rebooks again.
-    let midnight: ReturnType<typeof setTimeout>;
-    const armMidnight = () => {
-      midnight = setTimeout(() => {
-        reschedule();
-        armMidnight();
-      }, msUntilNextMidnight());
-    };
-    armMidnight();
     return () => {
       sub.remove();
       clearTimeout(midnight);
