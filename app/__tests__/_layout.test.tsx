@@ -10,11 +10,23 @@ jest.mock('../../src/lib/bell-engine', () => ({
   requestNotificationPermissions: jest.fn(() => Promise.resolve(true)),
 }));
 
+jest.mock('../../src/bell-refresh-task', () => ({
+  registerBellRefreshTask: jest.fn(() => Promise.resolve()),
+}));
+
 import RootLayout from '../_layout';
+import { registerBellRefreshTask } from '../../src/bell-refresh-task';
 
 const mockSchedule = scheduleBellNotifications as jest.Mock;
 const initialSchedule = useScheduleStore.getState();
 const initialSettings = useSettingsStore.getState();
+
+// setImmediate stays real: React Native's StatusBar keeps its pending immediate
+// in static state and hands it to clearImmediate on the next mount. A fake
+// handle reaching the real clearImmediate in a later real-timer test corrupts
+// Node's immediate count, so no immediate ever fires again and Jest hangs.
+const startFakeClock = (now: Date) =>
+  jest.useFakeTimers({ now, doNotFake: ['setImmediate', 'clearImmediate'] });
 
 let appStateListeners: ((state: string) => void)[];
 const emitAppState = (state: string) => act(() => appStateListeners.forEach((l) => l(state)));
@@ -38,6 +50,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  jest.useRealTimers();
   jest.restoreAllMocks();
   useScheduleStore.setState(initialSchedule, true);
   useSettingsStore.setState(initialSettings, true);
@@ -91,11 +104,65 @@ describe('RootLayout', () => {
     );
   });
 
+  it('reschedules at each local midnight while the app stays open', () => {
+    startFakeClock(new Date(2026, 1, 16, 23, 0, 0));
+    loadStores(true);
+    render(<RootLayout />);
+    expect(mockSchedule).toHaveBeenCalledTimes(1);
+
+    act(() => jest.advanceTimersByTime(60 * 60 * 1000 - 1));
+    expect(mockSchedule).toHaveBeenCalledTimes(1);
+
+    act(() => jest.advanceTimersByTime(1));
+    expect(mockSchedule).toHaveBeenCalledTimes(2);
+
+    act(() => jest.advanceTimersByTime(24 * 60 * 60 * 1000));
+    expect(mockSchedule).toHaveBeenCalledTimes(3);
+  });
+
+  it('rebooks once when the app returns after a midnight it slept through', () => {
+    startFakeClock(new Date(2026, 1, 16, 22, 0, 0));
+    loadStores(true);
+    render(<RootLayout />);
+    emitAppState('background');
+
+    // Suspended: the clock moves on but the midnight timer never fired.
+    jest.setSystemTime(new Date(2026, 1, 17, 7, 0, 0));
+    emitAppState('active');
+    expect(mockSchedule).toHaveBeenCalledTimes(2);
+
+    act(() => jest.advanceTimersByTime(2 * 60 * 60 * 1000));
+    expect(mockSchedule).toHaveBeenCalledTimes(2);
+
+    act(() => jest.advanceTimersByTime(15 * 60 * 60 * 1000));
+    expect(mockSchedule).toHaveBeenCalledTimes(3);
+  });
+
+  it('re-arms the midnight timer when the schedule changes', () => {
+    startFakeClock(new Date(2026, 1, 16, 12, 0, 0));
+    loadStores(true);
+    render(<RootLayout />);
+
+    act(() => useScheduleStore.setState({ days: [{ dayOfWeek: 1, periods: [] }] }));
+    expect(mockSchedule).toHaveBeenCalledTimes(2);
+
+    act(() => jest.advanceTimersByTime(12 * 60 * 60 * 1000));
+    expect(mockSchedule).toHaveBeenCalledTimes(3);
+  });
+
+  it('registers the background refresh task once onboarded', () => {
+    loadStores(true);
+    render(<RootLayout />);
+
+    expect(registerBellRefreshTask).toHaveBeenCalledTimes(1);
+  });
+
   it('does not schedule before onboarding finishes', () => {
     loadStores(false);
 
     render(<RootLayout />);
 
     expect(mockSchedule).not.toHaveBeenCalled();
+    expect(registerBellRefreshTask).not.toHaveBeenCalled();
   });
 });

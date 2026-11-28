@@ -5,6 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { setAudioModeAsync } from 'expo-audio';
 import { scheduleBellNotifications } from '../src/lib/bell-engine';
+import { msUntilNextMidnight } from '../src/lib/time-utils';
+import { registerBellRefreshTask } from '../src/bell-refresh-task';
 import { useScheduleStore } from '../src/store/schedule-store';
 import { useSettingsStore } from '../src/store/settings-store';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
@@ -20,8 +22,10 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Rebooks on every change and whenever the app returns to the foreground, so
-// the window of booked bells keeps rolling forward without visiting a tab.
+// Rebooks on every change, whenever the app returns to the foreground, and at
+// each local midnight while it stays open (a classroom display may never
+// leave the foreground), so the window of booked bells keeps rolling forward.
+// A background task rolls it forward while the app isn't opened at all.
 // A separate component so schedule edits don't re-render the whole Stack.
 function BellScheduler() {
   const days = useScheduleStore((s) => s.days);
@@ -31,8 +35,18 @@ function BellScheduler() {
   const mutedDate = useSettingsStore((s) => s.mutedDate);
 
   useEffect(() => {
-    const reschedule = () =>
+    registerBellRefreshTask();
+  }, []);
+
+  useEffect(() => {
+    // Every rebook re-aims the midnight timer, so a timer left overdue by a
+    // suspension is dropped when the app returns rather than rebooking again.
+    let midnight: ReturnType<typeof setTimeout> | undefined;
+    const reschedule = () => {
+      clearTimeout(midnight);
+      midnight = setTimeout(reschedule, msUntilNextMidnight());
       scheduleBellNotifications({ days, warningMinutes, notificationsEnabled, bellSounds, mutedDate });
+    };
     reschedule();
     // Only a real return from background: inactive -> active also fires when
     // Notification Center or a system alert closes, and nothing changed then.
@@ -41,7 +55,10 @@ function BellScheduler() {
       if (state === 'active' && previous === 'background') reschedule();
       previous = state;
     });
-    return () => sub.remove();
+    return () => {
+      sub.remove();
+      clearTimeout(midnight);
+    };
   }, [days, warningMinutes, bellSounds, notificationsEnabled, mutedDate]);
 
   return null;

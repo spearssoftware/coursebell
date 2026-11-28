@@ -7,7 +7,8 @@ const bellSoundFile = (sound: BellSound): string => `${sound}.wav`;
 
 // Bells are booked days ahead so they still ring when the app isn't opened.
 // A full school day uses ~20 slots, so MAX_PENDING usually binds first and
-// coverage is closer to 3 school days; each foreground rolls the window on.
+// coverage is closer to 3 school days, so callers must keep rebooking to roll
+// the window forward.
 const DAYS_AHEAD = 7;
 // iOS keeps only the 64 soonest pending local notifications and drops the rest.
 const MAX_PENDING = 64;
